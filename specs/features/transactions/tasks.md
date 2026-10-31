@@ -44,7 +44,7 @@ Orden sugerido: INT-01 → DB-01 → BE-01 a BE-04 → FE-01 a FE-04 → QA-01 a
 
 ## Backend (`finora-back`)
 
-- [ ] **T-TRX-BE-01**: `transactions/effects.py` (efecto por tipo, papel y tipo de cuenta; clasificación de transferencias), `categories.py` (catálogo de RN-TRX-07 con nombres es-CO) y `search.py` (`normalize`).
+- [x] **T-TRX-BE-01**: `transactions/effects.py` (efecto por tipo, papel y tipo de cuenta; clasificación de transferencias), `categories.py` (catálogo de RN-TRX-07 con nombres es-CO) y `search.py` (`normalize`).
   - **Aplicación:** `finora-back`
   - **Dependencias:** T-TRX-DB-01
   - **Prioridad:** Alta
@@ -157,3 +157,4 @@ Orden sugerido: INT-01 → DB-01 → BE-01 a BE-04 → FE-01 a FE-04 → QA-01 a
 | 30/10/2026 | Aprobadas junto con el plan. | Claude Code |
 | 30/10/2026 | T-TRX-INT-01 completada: §3 y §6 de `api-contracts.md`, §3 y §5.3 de `database.md`. Paginación por cursor (DP-API-06) confirmada por la usuaria; orden por monto en valor absoluto; claves de categoría en inglés. | Claude Code |
 | 30/10/2026 | T-TRX-DB-01 completada: migración `0005_transactions` (única (`id`, `user_id`) en `accounts`, tabla con `CHECK`, FK compuestas `NO ACTION`, índices y RLS), modelo `Transaction` con `TransactionType` y `Category`. 33 pruebas nuevas de esquema y RLS; suite completa 590/590, ruff, mypy y `alembic check` limpios. El `CHECK` de categoría exige `IS NOT NULL` explícito, porque `NULL IN (...)` es NULL y el `CHECK` lo dejaría pasar. | Claude Code |
+| 30/10/2026 | T-TRX-BE-01 completada: `effects.py` (tabla de signos `SIGNS` + inversión en tarjetas, única fuente de la regla para el `CASE` de SQL en BE-03; `classify_transfer`), `categories.py` (nombres es-CO, `is_allowed`, `matching` para la búsqueda) y `search.py` (`normalize`, `search_text` y `like_pattern`, que escapa `%`, `_` y `\\`). 92 pruebas unitarias, incluidos CA-TRX-01 a 06 y 12 sobre los totales de `accounts`; unitarias 277/277, ruff y mypy limpios. | Claude Code |
