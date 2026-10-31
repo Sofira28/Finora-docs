@@ -66,7 +66,7 @@ Los movimientos dan vida a `accounts`: el saldo actual de cada cuenta pasa a ser
 | RF-TRX-02 | El usuario registra una **transferencia** con monto, fecha, cuenta de origen, cuenta de destino, descripción opcional y nota opcional. Sin categoría. | Alta | ✅ |
 | RF-TRX-03 | El usuario registra un **ajuste de saldo** indicando el saldo real de una cuenta (en tarjetas, la deuda real). El sistema guarda la diferencia con el saldo actual como ajuste. Sin categoría. | Media | ✅ |
 | RF-TRX-04 | El usuario ve sus movimientos de la más reciente a la más antigua, 50 por página, con fecha, descripción, tipo, categoría, cuenta (y destino en transferencias) y monto con su signo. | Alta | ✅ |
-| RF-TRX-05 | El usuario filtra por texto (descripción, nota, categoría o cuenta), periodo (este mes, mes anterior, últimos 3 meses, todo el historial; meses calendario en hora de Colombia: "últimos 3 meses" es el mes actual y los dos anteriores, p. ej. del 01/08 al 31/10), tipo, categoría y cuenta, y ordena por fecha o por monto, ascendente o descendente. | Alta | ✅ |
+| RF-TRX-05 | El usuario filtra por texto (descripción, nota, categoría o cuenta), periodo (este mes, mes anterior, últimos 3 meses, todo el historial; meses calendario en hora de Colombia: "últimos 3 meses" es el mes actual y los dos anteriores, p. ej. del 01/08 al 31/10; al entrar sin filtros, el periodo es "este mes"), tipo, categoría y cuenta, y ordena por fecha o por monto, ascendente o descendente. | Alta | ✅ |
 | RF-TRX-06 | Junto al resultado se muestran, calculados por el backend sobre **todos** los movimientos que cumplen los filtros (no solo la página): cantidad, ingresos, gastos, ahorro neto y transferencias (RN-TRX-05). | Alta | ✅ |
 | RF-TRX-07 | El usuario edita cualquier dato de un movimiento, incluido su tipo. Los saldos de las cuentas afectadas se recalculan. | Alta | ✅ |
 | RF-TRX-08 | El usuario elimina un movimiento tras confirmar; la eliminación es definitiva y los saldos se recalculan. | Alta | ✅ |
@@ -237,6 +237,7 @@ Contexto común: cuentas de CA-ACC-01 — "Nómina" (`bank`, $ 2.800.000), "Efec
 | SUP-TRX-05 | En transferencias sin descripción, la lista muestra "Transferencia a <destino>"; en ajustes, "Ajuste de saldo" | Cambio de textos (bajo) |
 | SUP-TRX-06 | Sin tope de cantidad de movimientos por usuario; RNF-TRX-06 dimensiona 10.000 | Revisar rendimiento (medio) |
 | SUP-TRX-07 | Ediciones concurrentes: gana la última escritura | Pérdida de un cambio en casos raros |
+| SUP-TRX-08 | Con "este mes" por defecto, la invitación a registrar el primer movimiento (RF-TRX-09) aparece solo si el usuario no tiene ningún movimiento (ninguna cuenta con `has_movements`); si tiene movimientos fuera del mes, ve "Sin resultados". "Limpiar filtros" quita todos los filtros, también el periodo, y muestra "Todo el historial" | Cambio de textos o del comportamiento de "Limpiar filtros" (bajo) |
 
 ## 16. Historial de cambios
 
@@ -246,3 +247,4 @@ Contexto común: cuentas de CA-ACC-01 — "Nómina" (`bank`, $ 2.800.000), "Efec
 | 30/10/2026 | Especificación completa con las recomendaciones aceptadas por la usuaria: cuatro tipos (con ajuste de saldo y ahorro como transferencia hacia ahorro o inversión), catálogo fijo de categorías, tarjetas, campos, fechas no futuras, pantalla y solo registro manual. Resuelve PA-TRX-01 a 05. Nuevos supuestos SUP-TRX-01 a 07. Pasa a `En revisión`. | Claude Code |
 | 30/10/2026 | Aprobada por la usuaria, con los supuestos SUP-TRX-01 a 07 validados (🟡 → ✅ en RN-TRX-05, RN-TRX-09 y RNF-TRX-06). | Claude Code |
 | 31/10/2026 | Aclaración en RF-TRX-05 confirmada por la usuaria (T-TRX-FE-01): los periodos son meses calendario en hora de Colombia y "últimos 3 meses" abarca el mes actual y los dos anteriores. Sin cambio de alcance. | Claude Code |
+| 31/10/2026 | La usuaria confirma "este mes" como periodo por defecto (RF-TRX-05). Nuevo supuesto SUP-TRX-08 (estado vacío y "Limpiar filtros" con ese periodo por defecto), validado por la usuaria el mismo día. | Claude Code |
