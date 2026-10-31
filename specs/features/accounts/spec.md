@@ -196,7 +196,7 @@ Es la base de `transactions`: todo movimiento pertenece a una cuenta.
 | PA-ACC-02 | Saldo de una tarjeta y su efecto en el patrimonio | Producto | Resuelta (30/10/2026): el saldo es la deuda, que resta del patrimonio; se guardan cupo, día de corte y día de pago; la tasa queda para `debts` |
 | PA-ACC-03 | Qué cuentas cuentan para el saldo disponible | Producto | Resuelta (30/10/2026): bancarias, billeteras y efectivo (RN-ACC-03) |
 | PA-ACC-04 | Archivar cuentas con historial | Producto | Resuelta (30/10/2026): archivar y reactivar; eliminar solo sin movimientos |
-| PA-ACC-05 | ¿Cómo se corrige el saldo de una cuenta con movimientos: un movimiento de "ajuste de saldo" que no sea ingreso ni gasto? | Producto | Abierta; se resuelve en `transactions` (no bloquea esta spec) |
+| PA-ACC-05 | ¿Cómo se corrige el saldo de una cuenta con movimientos: un movimiento de "ajuste de saldo" que no sea ingreso ni gasto? | Producto | Resuelta (30/10/2026) en `transactions`: movimiento `adjustment` con la diferencia firmada (RF-TRX-03, RN-TRX-04) |
 
 También resuelve PA-PRJ-05 de [`specs/project.md`](../../project.md) (definición de saldo disponible y patrimonio neto).
 
@@ -220,3 +220,4 @@ También resuelve PA-PRJ-05 de [`specs/project.md`](../../project.md) (definici�
 | 30/10/2026 | Especificación completa con las respuestas a PA-ACC-01 a 04 (recomendaciones aceptadas por la usuaria). Nuevos supuestos SUP-ACC-01 a 07 y PA-ACC-05. Pasa a `En revisión`. | Claude Code |
 | 30/10/2026 | Aprobada por la usuaria, con los supuestos SUP-ACC-01 a 07 validados (🟡 → ✅). PA-ACC-05 sigue abierta y se resuelve en `transactions`. | Claude Code |
 | 30/10/2026 | Al implementar T-ACC-BE-02: nuevo VAL-ACC-11 con el mensaje del tope de 100 cuentas (SUP-ACC-06 no lo definía). VAL-ACC-05 usa "Este dato solo aplica a tarjetas de crédito." en la API. Sin cambios de reglas. | Claude Code |
+| 30/10/2026 | PA-ACC-05 resuelta por la spec aprobada de `transactions` (ajuste de saldo). Sin cambios de reglas de esta feature. | Claude Code |

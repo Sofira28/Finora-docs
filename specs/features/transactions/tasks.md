@@ -3,16 +3,155 @@
 | Campo | Valor |
 |---|---|
 | Identificador | `FEAT-TRX` |
-| Estado | `Draft` |
-| Última actualización | 29/10/2026 |
-| Plantilla | [`specs/templates/tasks-template.md`](../../templates/tasks-template.md) |
-| Especificación | [`spec.md`](spec.md) |
-| Plan técnico | [`plan.md`](plan.md) |
+| Estado | `Aprobado` |
+| Especificación | [`spec.md`](spec.md) (Aprobado, 30/10/2026) |
+| Plan técnico | [`plan.md`](plan.md) (Aprobado, 30/10/2026) |
+| Última actualización | 30/10/2026 |
 
-> ⚠️ **Los requisitos detallados y las decisiones técnicas están pendientes.** Este documento solo inicializa la feature y no contiene requisitos aprobados.
+> Reglas:
+> - Solo se listan tareas derivadas de un plan **aprobado**; estas se aprueban junto con el plan.
+> - Una tarea se marca `[x]` **solo** después de ejecutar su verificación con resultado exitoso.
+> - Aplicación: `finora-web` | `finora-back` | `shared` | `infraestructura`.
+> - Prioridad: `Alta` | `Media` | `Baja`.
+> - Los comandos de `finora-back` se ejecutan en esa carpeta y requieren Docker. Los de `finora-web`, en la suya.
 
-**No hay tareas aprobadas.** Las tareas se definirán a partir del [`plan.md`](plan.md) aprobado, usando la estructura de la plantilla (Frontend, Backend, Base de datos, Integración y Pruebas).
+Leyenda de estado:
 
-## Tareas
+- [ ] Pendiente
+- [x] Completada
 
-_Sin tareas definidas._
+Orden sugerido: INT-01 → DB-01 → BE-01 a BE-04 → FE-01 a FE-04 → QA-01 a QA-05 → INT-02.
+
+---
+
+## Integración
+
+- [ ] **T-TRX-INT-01**: Registrar los 5 endpoints de `plan.md` §6 en `specs/api-contracts.md` (§3 y una sección nueva "Transacciones", estado `Aprobado`, sin implementar), la tabla de `plan.md` §5 en `specs/database.md` §5 y DP-DB-03 como resuelto (ADR-0005).
+  - **Aplicación:** `shared`
+  - **Dependencias:** Plan aprobado
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** Endpoints, modelo `Transaction`, `TransactionRequest` por tipo, códigos de error y tabla coinciden con `plan.md` §5 y §6
+  - **Verificación:** Revisión manual de documentos
+
+## Base de datos
+
+- [ ] **T-TRX-DB-01**: Migración `0005_transactions`: única (`id`, `user_id`) en `accounts`; tabla `transactions` con `CHECK` por tipo, categoría y destino, FK compuestas `NO ACTION`, índices, RLS y política `transactions_owner`. Modelo `Transaction` y enums registrados en `db/models.py`.
+  - **Aplicación:** `finora-back`
+  - **Dependencias:** T-TRX-INT-01
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** `alembic upgrade`/`downgrade` limpios; `alembic check` sin diferencias; RLS sin usuario fijado devuelve cero filas; una FK a una cuenta de otro usuario falla; no se puede borrar una cuenta con movimientos; borrar el usuario borra cuentas y movimientos
+  - **Verificación:** `uv run pytest tests/integration/test_transactions_schema.py tests/integration/test_transactions_rls.py && uv run alembic check`
+
+## Backend (`finora-back`)
+
+- [ ] **T-TRX-BE-01**: `transactions/effects.py` (efecto por tipo, papel y tipo de cuenta; clasificación de transferencias), `categories.py` (catálogo de RN-TRX-07 con nombres es-CO) y `search.py` (`normalize`).
+  - **Aplicación:** `finora-back`
+  - **Dependencias:** T-TRX-DB-01
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** Tabla de efectos de `plan.md` §2 completa; ahorro, retiro de ahorro y otras transferencias; `normalize("Café ÁRBOL")` = `"cafe arbol"`
+  - **Verificación:** `uv run pytest tests/unit/test_transaction_effects.py tests/unit/test_transaction_categories.py`
+
+- [ ] **T-TRX-BE-02**: `schemas.py` (petición por tipo con `extra="forbid"`, respuestas) y `service.py` (`list`, `get`, `create`, `replace`, `delete`, con las validaciones VAL-TRX-01 a 11, el ajuste por `target_balance` y el resumen de RN-TRX-05 con filtros y orden).
+  - **Aplicación:** `finora-back`
+  - **Dependencias:** T-TRX-BE-01
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** VAL-TRX-01 a 11 con sus mensajes; fecha "hoy" en hora de Colombia con `ClockDep`; resumen sobre todo el filtro, no solo la página; búsqueda sin tildes en descripción, nota, categoría y cuenta; orden estable
+  - **Verificación:** `uv run pytest tests/unit/test_transaction_schemas.py tests/integration/test_transactions_service.py`
+
+- [ ] **T-TRX-BE-03**: Saldos reales en `accounts`: `effects_by_account` (una consulta agregada), `current_balance(opening, effect)` y `movement_count` real. La consulta SQL y `effects.py` deben coincidir.
+  - **Aplicación:** `finora-back`
+  - **Dependencias:** T-TRX-BE-02
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** CA-TRX-01 a 06 con los saldos y totales de `/accounts`; CA-TRX-08 (VAL-ACC-07 y 08 con movimientos reales); las pruebas existentes de `accounts` siguen en verde
+  - **Verificación:** `uv run pytest tests/integration/test_accounts_with_transactions.py tests/integration/test_accounts_api.py`
+
+- [ ] **T-TRX-BE-04**: `api/v1/transactions.py` con los 5 endpoints de `plan.md` §6 (`CurrentUser` + `UserDb`, Origin y CSRF en escrituras, `Cache-Control: no-store`).
+  - **Aplicación:** `finora-back`
+  - **Dependencias:** T-TRX-BE-03
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** CA-TRX-01 a 12 por HTTP; respuestas idénticas al contrato; `401` sin sesión, `403` sin CSRF, `404` para movimientos ajenos, `422` para cuentas ajenas; paginación con `next_offset`
+  - **Verificación:** `uv run pytest tests/integration/test_transactions_api.py && uv run ruff check . && uv run mypy .`
+
+## Frontend (`finora-web`)
+
+- [ ] **T-TRX-FE-01**: `pnpm api:types`; `categories.ts` (nombres y colores), `periods.ts` (periodos → `from`/`to` en hora de Colombia), `TransactionsIcon`, "Movimientos" en `NAV_ITEMS` y ruta `/movimientos` (`lazy`).
+  - **Aplicación:** `finora-web`
+  - **Dependencias:** T-TRX-BE-04
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** Periodos correctos en cambios de mes y año y a medianoche de Colombia; navegación con "Inicio", "Movimientos" y "Cuentas"; pruebas de `AppShell` en verde
+  - **Verificación:** `pnpm test src/features/transactions src/app && pnpm lint && pnpm typecheck`
+
+- [ ] **T-TRX-FE-02**: Página Movimientos: filtros en la URL, resumen, lista (tabla en escritorio, lista en móvil), "Cargar más" y estados de carga, error con reintento, vacío y sin resultados.
+  - **Aplicación:** `finora-web`
+  - **Dependencias:** T-TRX-FE-01
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** RF-TRX-04 a 06, 09 y 10; CA-TRX-10 en pantalla; montos con signo y texto (RNF-TRX-04); el frontend no suma montos
+  - **Verificación:** `pnpm test src/features/transactions`
+
+- [ ] **T-TRX-FE-03**: `TransactionFormDialog` para crear y editar los cuatro tipos: campos por tipo, monto con `MoneyField`, fecha hasta hoy, solo cuentas activas, categorías del tipo, ajuste con saldo real y errores `422` del backend en su campo.
+  - **Aplicación:** `finora-web`
+  - **Dependencias:** T-TRX-FE-02
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** RF-TRX-01 a 03 y 07; CA-TRX-09; VAL-TRX-01 a 09 con sus mensajes; editar un movimiento de una cuenta archivada sin cambiar la cuenta
+  - **Verificación:** `pnpm test src/features/transactions`
+
+- [ ] **T-TRX-FE-04**: Eliminar con `ConfirmDialog` desde el menú de cada movimiento (`404` cierra y recarga) y "Ajustar saldo" en el menú de acciones de Cuentas (también enlazado desde el saldo bloqueado del formulario de cuenta).
+  - **Aplicación:** `finora-web`
+  - **Dependencias:** T-TRX-FE-03
+  - **Prioridad:** Media
+  - **Criterios de aceptación:** RF-TRX-08; CA-TRX-06 y 07 en pantalla; saldos y totales de Cuentas se recargan tras cada cambio
+  - **Verificación:** `pnpm test src/features/transactions src/features/accounts`
+
+## Pruebas
+
+- [ ] **T-TRX-QA-01**: E2E (Playwright) contra el backend real: CA-TRX-01, 03, 04 y 05 con las cuentas de CA-ACC-01 y los totales de Cuentas; editar y eliminar.
+  - **Aplicación:** `finora-web`
+  - **Dependencias:** T-TRX-FE-04
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** Flujo completo sin errores
+  - **Verificación:** `pnpm test:e2e`
+
+- [ ] **T-TRX-QA-02**: Accesibilidad: axe WCAG 2.2 AA (con contraste) en Movimientos y el modal en los tres rangos, reflow a 320 px, foco visible y teclado en filtros, menú y diálogos.
+  - **Aplicación:** `finora-web`
+  - **Dependencias:** T-TRX-QA-01
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** RNF-TRX-04 sin violaciones
+  - **Verificación:** `pnpm test:e2e e2e/accessibility.spec.ts`
+
+- [ ] **T-TRX-QA-03**: Rendimiento: listado, resumen y `/accounts` con 10.000 movimientos por usuario.
+  - **Aplicación:** `finora-back`
+  - **Dependencias:** T-TRX-BE-04
+  - **Prioridad:** Media
+  - **Criterios de aceptación:** RNF-TRX-06 (< 1 s); si no se cumple, propuesta según ADR-0005 §Consecuencias
+  - **Verificación:** `uv run pytest tests/integration/test_transactions_performance.py`
+
+- [ ] **T-TRX-QA-04**: Revisión de seguridad de la feature (aislamiento, RLS, FK compuestas, validación de montos y fechas, búsqueda) y corrección de los hallazgos confirmados.
+  - **Aplicación:** `shared`
+  - **Dependencias:** T-TRX-QA-02, T-TRX-QA-03
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** Sin hallazgos abiertos de severidad alta o media
+  - **Verificación:** Informe de revisión y suites completas en verde
+
+- [ ] **T-TRX-QA-05**: Revisión visual de Movimientos y el modal contra Claude Design con la responsable de producto, en escritorio, tablet y móvil.
+  - **Aplicación:** `finora-web`
+  - **Dependencias:** T-TRX-QA-02
+  - **Prioridad:** Media
+  - **Criterios de aceptación:** Aprobación de la responsable de producto
+  - **Verificación:** Revisión manual
+
+## Cierre
+
+- [ ] **T-TRX-INT-02**: Endpoints a `Implementado` en `api-contracts.md`, esquema implementado en `database.md`, ADR-0005 en el índice, READMEs y estado de la feature.
+  - **Aplicación:** `shared`
+  - **Dependencias:** T-TRX-QA-04, T-TRX-QA-05
+  - **Prioridad:** Media
+  - **Criterios de aceptación:** Documentación coherente con lo implementado
+  - **Verificación:** Revisión manual de documentos
+
+## Historial de cambios
+
+| Fecha | Cambio | Autor |
+|---|---|---|
+| 29/10/2026 | Creación (inicialización de la feature) | Claude Code |
+| 30/10/2026 | Tareas derivadas del plan (`En revisión`): INT-01, DB-01, BE-01 a 04, FE-01 a 04, QA-01 a 05 e INT-02. | Claude Code |
+| 30/10/2026 | Aprobadas junto con el plan. | Claude Code |

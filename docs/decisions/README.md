@@ -41,3 +41,4 @@ Las decisiones abiertas se listan en:
 | [ADR-0002](ADR-0002-autenticacion-google-y-correo.md) | Inicio de sesión con Google, envío de correos y estado de autenticación | Aceptada |
 | [ADR-0003](ADR-0003-repositorios.md) | Un repositorio por aplicación y uno para la documentación | Aceptada |
 | [ADR-0004](ADR-0004-row-level-security.md) | Row-Level Security con un rol de aplicación sin privilegios | Aceptada |
+| [ADR-0005](ADR-0005-modelo-de-movimientos.md) | Modelo de movimientos y cálculo de saldos | Aceptada |
