@@ -126,6 +126,7 @@ Es la base de `transactions`: todo movimiento pertenece a una cuenta.
 | VAL-ACC-08 | Eliminar una cuenta con movimientos | `409` | "Esta cuenta tiene movimientos. Puedes archivarla para ocultarla sin perder su historial." |
 | VAL-ACC-09 | Cuenta inexistente o de otro usuario | `404` | "No encontramos esa cuenta." |
 | VAL-ACC-10 | Deuda de tarjeta mayor que el cupo | Se permite; el cupo disponible se muestra en cero y el uso por encima del 100 % con aviso | "Superaste el cupo de esta tarjeta." |
+| VAL-ACC-11 | Crear una cuenta con 100 cuentas ya registradas (SUP-ACC-06) | `409` | "Llegaste al máximo de 100 cuentas. Elimina las que ya no uses." |
 
 ## 11. Casos borde
 
@@ -218,3 +219,4 @@ También resuelve PA-PRJ-05 de [`specs/project.md`](../../project.md) (definici�
 | 29/10/2026 | Creación (inicialización de la feature) | Claude Code |
 | 30/10/2026 | Especificación completa con las respuestas a PA-ACC-01 a 04 (recomendaciones aceptadas por la usuaria). Nuevos supuestos SUP-ACC-01 a 07 y PA-ACC-05. Pasa a `En revisión`. | Claude Code |
 | 30/10/2026 | Aprobada por la usuaria, con los supuestos SUP-ACC-01 a 07 validados (🟡 → ✅). PA-ACC-05 sigue abierta y se resuelve en `transactions`. | Claude Code |
+| 30/10/2026 | Al implementar T-ACC-BE-02: nuevo VAL-ACC-11 con el mensaje del tope de 100 cuentas (SUP-ACC-06 no lo definía). VAL-ACC-05 usa "Este dato solo aplica a tarjetas de crédito." en la API. Sin cambios de reglas. | Claude Code |
