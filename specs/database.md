@@ -75,7 +75,7 @@ Aprobado el 29/10/2026 en [`features/authentication/plan.md`](features/authentic
 
 ### 5.2 Cuentas y tarjetas (`accounts`)
 
-Aprobado el 30/10/2026 en [`features/accounts/plan.md`](features/accounts/plan.md) §5. Migración `0003_accounts`, **sin implementar**.
+Aprobado el 30/10/2026 en [`features/accounts/plan.md`](features/accounts/plan.md) §5. Rol `finora_app` en la migración `0003_app_role` (implementada, 30/10/2026); tabla en `0004_accounts`, **sin implementar**.
 
 | Tabla | Columnas principales | Restricciones / índices |
 |---|---|---|

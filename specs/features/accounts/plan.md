@@ -122,7 +122,7 @@ Es la base de todas las features siguientes; aquí se implementa solo lo necesar
 
 ## 5. Cambios en la base de datos
 
-Migración **`0003_accounts`**:
+Migraciones **`0003_app_role`** (rol, T-ACC-DB-01) y **`0004_accounts`** (tabla, T-ACC-DB-02):
 
 - **Rol `finora_app`** (ADR-0004):
   - `CREATE ROLE ... NOLOGIN NOSUPERUSER NOBYPASSRLS`, si no existe;
@@ -253,7 +253,7 @@ Todos exigen sesión `active`. `POST`, `PATCH` y `DELETE` exigen además CSRF y 
 ## 13. Secuencia de implementación
 
 1. RLS y rol `finora_app` (ADR-0004), con las suites de `authentication` en verde.
-2. Migración `0003_accounts`, modelo y `balances.py` con sus pruebas unitarias.
+2. Migración `0004_accounts`, modelo y `balances.py` con sus pruebas unitarias.
 3. Servicio, esquemas y endpoints con pruebas de integración; registro en `api-contracts.md`.
 4. `pnpm api:types`; `parseMoneyInput`, `MoneyField` y `ConfirmDialog`.
 5. `AppShell` y las rutas protegidas dentro de él.
@@ -277,3 +277,4 @@ Todos exigen sesión `active`. `POST`, `PATCH` y `DELETE` exigen además CSRF y 
 | 29/10/2026 | Creación (inicialización de la feature) | Claude Code |
 | 30/10/2026 | Plan completo a partir de la spec aprobada; propone ADR-0004 (RLS). Pasa a `En revisión`. | Claude Code |
 | 30/10/2026 | Aprobado por la usuaria, con las cuatro decisiones de §14 (ADR-0004 pasa a `Aceptada`). | Claude Code |
+| 30/10/2026 | Precisiones de DB-01: el rol va en su propia migración `0003_app_role` (la tabla pasa a `0004_accounts`). `SET ROLE` se ejecuta y confirma al abrir cada conexión, para que un `ROLLBACK` posterior no lo deshaga. El rol no se borra en el downgrade (es global del servidor y lo comparten las bases de desarrollo, E2E y pruebas): solo pierde los permisos de esa base. `alembic_version` queda solo para el dueño. `UserDb` (en `auth/dependencies.py`) fija el usuario y lo libera al terminar la petición. | Claude Code |

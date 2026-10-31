@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Identificador | `FEAT-ACC` |
-| Estado | `Aprobado` |
+| Estado | `En progreso` |
 | Especificación | [`spec.md`](spec.md) (Aprobado, 30/10/2026) |
 | Plan técnico | [`plan.md`](plan.md) (Aprobado, 30/10/2026) |
 | Última actualización | 30/10/2026 |
@@ -35,14 +35,14 @@ Orden sugerido: INT-01 → DB-01 → DB-02 → BE-01 a BE-03 → FE-01 a FE-05 �
 
 ## Base de datos
 
-- [ ] **T-ACC-DB-01**: RLS según ADR-0004. Migración que crea el rol `finora_app` si no existe, con permisos sobre todas las tablas y secuencias y privilegios por defecto para las futuras. `db/rls.py`: `SET ROLE finora_app` al conectar el motor de la API (no el de Alembic), evento `after_begin` que fija `finora.user_id` desde `Session.info` y dependencia `UserDb`. Las pruebas usan el mismo motor con `SET ROLE`.
+- [x] **T-ACC-DB-01**: RLS según ADR-0004. Migración `0003_app_role` que crea el rol `finora_app` si no existe, con permisos sobre todas las tablas y secuencias y privilegios por defecto para las futuras. `db/rls.py`: `SET ROLE finora_app` al conectar el motor de la API (no el de Alembic), evento `after_begin` que fija `finora.user_id` desde `Session.info` y dependencia `UserDb`. Las pruebas usan el mismo motor con `SET ROLE`.
   - **Aplicación:** `finora-back`
   - **Dependencias:** T-ACC-INT-01
   - **Prioridad:** Alta
   - **Criterios de aceptación:** La API trabaja como `finora_app` (no superusuario); `finora.user_id` se fija en cada transacción, también después de un `commit`, y no pasa a otra petición; toda la suite de `authentication` sigue en verde
   - **Verificación:** `uv run pytest tests/integration/test_rls.py && uv run pytest && uv run mypy .`
 
-- [ ] **T-ACC-DB-02**: Migración `0003_accounts`: tabla `accounts` con sus `CHECK`, índice único en (`user_id`, `lower(name)`), índice en `user_id`, `ENABLE ROW LEVEL SECURITY` y política `accounts_owner`. Modelo `Account` registrado en `db/models.py`.
+- [ ] **T-ACC-DB-02**: Migración `0004_accounts`: tabla `accounts` con sus `CHECK`, índice único en (`user_id`, `lower(name)`), índice en `user_id`, `ENABLE ROW LEVEL SECURITY` y política `accounts_owner`. Modelo `Account` registrado en `db/models.py`.
   - **Aplicación:** `finora-back`
   - **Dependencias:** T-ACC-DB-01
   - **Prioridad:** Alta
@@ -156,3 +156,4 @@ Orden sugerido: INT-01 → DB-01 → DB-02 → BE-01 a BE-03 → FE-01 a FE-05 �
 |---|---|---|
 | 29/10/2026 | Creación (inicialización de la feature) | Claude Code |
 | 30/10/2026 | Tareas a partir del plan aprobado. Completada INT-01: 7 endpoints y modelo `Account` en `api-contracts.md` (§3 y §5) y tabla `accounts` con RLS en `database.md` §5.2. | Claude Code |
+| 30/10/2026 | Completada DB-01: migración `0003_app_role`, `db/rls.py` (`SET ROLE` al conectar, `after_begin` con `set_config(..., true)`, `bind_user`/`unbind_user`) y dependencia `UserDb`; la API y las pruebas trabajan como `finora_app`. `tests/integration/test_rls.py` (7): rol sin privilegios y no dueño, sin acceso a `alembic_version`, usuario conservado tras `commit` y no heredado por otra sesión del pool, `UserDb`, política que falla cerrado y migración que baja y sube. Verificado: backend 402/402 (ruff, mypy), E2E 17/17 contra el backend con el rol nuevo y migración aplicada a la base de desarrollo. | Claude Code |
