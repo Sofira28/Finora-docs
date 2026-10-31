@@ -55,13 +55,13 @@
 | `authentication` | POST | `/api/v1/me/mfa/confirm` | Implementado (30/10/2026) | v1 |
 | `authentication` | POST | `/api/v1/me/mfa/disable` | Implementado (30/10/2026) | v1 |
 | `authentication` | DELETE | `/api/v1/me` | Implementado (30/10/2026) | v1 |
-| `accounts` | GET | `/api/v1/accounts` | Aprobado (30/10/2026), sin implementar | v1 |
-| `accounts` | POST | `/api/v1/accounts` | Aprobado (30/10/2026), sin implementar | v1 |
-| `accounts` | GET | `/api/v1/accounts/{id}` | Aprobado (30/10/2026), sin implementar | v1 |
-| `accounts` | PATCH | `/api/v1/accounts/{id}` | Aprobado (30/10/2026), sin implementar | v1 |
-| `accounts` | POST | `/api/v1/accounts/{id}/archive` | Aprobado (30/10/2026), sin implementar | v1 |
-| `accounts` | POST | `/api/v1/accounts/{id}/restore` | Aprobado (30/10/2026), sin implementar | v1 |
-| `accounts` | DELETE | `/api/v1/accounts/{id}` | Aprobado (30/10/2026), sin implementar | v1 |
+| `accounts` | GET | `/api/v1/accounts` | Implementado en `finora-back` (30/10/2026); `finora-web` pendiente | v1 |
+| `accounts` | POST | `/api/v1/accounts` | Implementado en `finora-back` (30/10/2026); `finora-web` pendiente | v1 |
+| `accounts` | GET | `/api/v1/accounts/{id}` | Implementado en `finora-back` (30/10/2026); `finora-web` pendiente | v1 |
+| `accounts` | PATCH | `/api/v1/accounts/{id}` | Implementado en `finora-back` (30/10/2026); `finora-web` pendiente | v1 |
+| `accounts` | POST | `/api/v1/accounts/{id}/archive` | Implementado en `finora-back` (30/10/2026); `finora-web` pendiente | v1 |
+| `accounts` | POST | `/api/v1/accounts/{id}/restore` | Implementado en `finora-back` (30/10/2026); `finora-web` pendiente | v1 |
+| `accounts` | DELETE | `/api/v1/accounts/{id}` | Implementado en `finora-back` (30/10/2026); `finora-web` pendiente | v1 |
 
 ### GET `/api/v1/health`
 
@@ -266,6 +266,8 @@ Definidos en [`features/accounts/plan.md`](features/accounts/plan.md) §6. Regla
 - Solo se ven y modifican las cuentas del usuario de la sesión. Una cuenta de otro usuario o inexistente responde `404` con `code: "account_not_found"` y el título "No encontramos esa cuenta.".
 - Montos: cadena decimal en COP. La entrada acepta de 0 a 2 decimales (`"1250000"`, `"1250000.5"`); la salida siempre trae 2 (`"1250000.50"`). Un monto como número JSON se rechaza con `422`.
 - Los totales los calcula solo el backend.
+- Las respuestas llevan `Cache-Control: no-store`, como las de `/auth` y `/me`.
+- Un `{id}` que no es un UUID responde `422`.
 
   | `code` | Estado | Cuándo |
   |---|---|---|
@@ -331,5 +333,6 @@ Definidos en [`features/accounts/plan.md`](features/accounts/plan.md) §6. Regla
 
 #### DELETE `/api/v1/accounts/{id}`
 
+- **Request:** `{}` (como toda escritura, exige `Content-Type: application/json`, §4.1).
 - **204**. Definitivo.
 - **Errores:** `404` y `409 account_has_movements`.
