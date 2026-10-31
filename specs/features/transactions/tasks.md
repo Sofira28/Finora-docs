@@ -6,7 +6,7 @@
 | Estado | `En progreso` |
 | Especificación | [`spec.md`](spec.md) (Aprobado, 30/10/2026) |
 | Plan técnico | [`plan.md`](plan.md) (Aprobado, 30/10/2026) |
-| Última actualización | 30/10/2026 |
+| Última actualización | 31/10/2026 |
 
 > Reglas:
 > - Solo se listan tareas derivadas de un plan **aprobado**; estas se aprueban junto con el plan.
@@ -65,7 +65,7 @@ Orden sugerido: INT-01 → DB-01 → BE-01 a BE-04 → FE-01 a FE-04 → QA-01 a
   - **Criterios de aceptación:** CA-TRX-01 a 06 con los saldos y totales de `/accounts`; CA-TRX-08 (VAL-ACC-07 y 08 con movimientos reales); las pruebas existentes de `accounts` siguen en verde
   - **Verificación:** `uv run pytest tests/integration/test_accounts_with_transactions.py tests/integration/test_accounts_api.py`
 
-- [ ] **T-TRX-BE-04**: `api/v1/transactions.py` con los 5 endpoints de `plan.md` §6 (`CurrentUser` + `UserDb`, Origin y CSRF en escrituras, `Cache-Control: no-store`).
+- [x] **T-TRX-BE-04**: `api/v1/transactions.py` con los 5 endpoints de `plan.md` §6 (`CurrentUser` + `UserDb`, Origin y CSRF en escrituras, `Cache-Control: no-store`).
   - **Aplicación:** `finora-back`
   - **Dependencias:** T-TRX-BE-03
   - **Prioridad:** Alta
@@ -160,3 +160,4 @@ Orden sugerido: INT-01 → DB-01 → BE-01 a BE-04 → FE-01 a FE-04 → QA-01 a
 | 30/10/2026 | T-TRX-BE-01 completada: `effects.py` (tabla de signos `SIGNS` + inversión en tarjetas, única fuente de la regla para el `CASE` de SQL en BE-03; `classify_transfer`), `categories.py` (nombres es-CO, `is_allowed`, `matching` para la búsqueda) y `search.py` (`normalize`, `search_text` y `like_pattern`, que escapa `%`, `_` y `\\`). 92 pruebas unitarias, incluidos CA-TRX-01 a 06 y 12 sobre los totales de `accounts`; unitarias 277/277, ruff y mypy limpios. | Claude Code |
 | 30/10/2026 | T-TRX-BE-02 completada: `schemas.py` (petición única con validación de formato; fecha solo `AAAA-MM-DD`; nota con saltos de línea), `ledger.py` (saldos en SQL desde la tabla de `effects`) y `service.py` (crear, reemplazar, eliminar, consultar y listar con filtros, búsqueda, resumen y cursor; VAL-TRX-01 a 11). 31 pruebas unitarias y 68 de integración, incluida la paridad SQL/Python de los efectos en todas las combinaciones de tipo y cuenta; suite completa 781/781, ruff y mypy limpios. Desviaciones del plan registradas en su historial. | Claude Code |
 | 30/10/2026 | T-TRX-BE-03 completada: `/accounts` calcula saldos y `has_movements` con una sola consulta (`effects_by_account`) para todo el listado; `movement_count` cuenta movimientos reales como origen o destino; `delete_account` responde `409 account_has_movements` también si la FK lo detecta por una carrera. 13 pruebas HTTP nuevas (CA-TRX-01 a 08, cuenta archivada y aislamiento); suite completa 794/794, ruff y mypy limpios. | Claude Code |
+| 31/10/2026 | T-TRX-BE-04 completada: `api/v1/transactions.py` con los 5 endpoints (sesión, Origin, CSRF en escrituras, `no-store`); `from`/`to` como alias y fechas solo `AAAA-MM-DD` también en la consulta. 37 pruebas HTTP (CA-TRX-01 a 12, `401`, `403`, `404`, `422` por campo y por parámetro, cursor y aislamiento); suite completa 831/831, ruff y mypy limpios; OpenAPI comprobado contra el contrato. Endpoints a "Implementado en `finora-back`" en `api-contracts.md`. | Claude Code |

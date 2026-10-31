@@ -62,11 +62,11 @@
 | `accounts` | POST | `/api/v1/accounts/{id}/archive` | Implementado en `finora-back` (30/10/2026); `finora-web` pendiente | v1 |
 | `accounts` | POST | `/api/v1/accounts/{id}/restore` | Implementado en `finora-back` (30/10/2026); `finora-web` pendiente | v1 |
 | `accounts` | DELETE | `/api/v1/accounts/{id}` | Implementado en `finora-back` (30/10/2026); `finora-web` pendiente | v1 |
-| `transactions` | GET | `/api/v1/transactions` | Aprobado (30/10/2026), sin implementar | v1 |
-| `transactions` | POST | `/api/v1/transactions` | Aprobado (30/10/2026), sin implementar | v1 |
-| `transactions` | GET | `/api/v1/transactions/{id}` | Aprobado (30/10/2026), sin implementar | v1 |
-| `transactions` | PUT | `/api/v1/transactions/{id}` | Aprobado (30/10/2026), sin implementar | v1 |
-| `transactions` | DELETE | `/api/v1/transactions/{id}` | Aprobado (30/10/2026), sin implementar | v1 |
+| `transactions` | GET | `/api/v1/transactions` | Implementado en `finora-back` (31/10/2026); `finora-web` pendiente | v1 |
+| `transactions` | POST | `/api/v1/transactions` | Implementado en `finora-back` (31/10/2026); `finora-web` pendiente | v1 |
+| `transactions` | GET | `/api/v1/transactions/{id}` | Implementado en `finora-back` (31/10/2026); `finora-web` pendiente | v1 |
+| `transactions` | PUT | `/api/v1/transactions/{id}` | Implementado en `finora-back` (31/10/2026); `finora-web` pendiente | v1 |
+| `transactions` | DELETE | `/api/v1/transactions/{id}` | Implementado en `finora-back` (31/10/2026); `finora-web` pendiente | v1 |
 
 ### GET `/api/v1/health`
 
