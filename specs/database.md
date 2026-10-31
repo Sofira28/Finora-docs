@@ -85,7 +85,7 @@ Aprobado el 30/10/2026 en [`features/accounts/plan.md`](features/accounts/plan.m
 
 ### 5.3 Movimientos (`transactions`)
 
-Aprobado el 30/10/2026 en [`features/transactions/plan.md`](features/transactions/plan.md) §5 y [ADR-0005](../docs/decisions/ADR-0005-modelo-de-movimientos.md). Migración `0005_transactions` (sin implementar).
+Aprobado el 30/10/2026 en [`features/transactions/plan.md`](features/transactions/plan.md) §5 y [ADR-0005](../docs/decisions/ADR-0005-modelo-de-movimientos.md). Migración `0005_transactions` (implementada, 30/10/2026).
 
 | Tabla | Columnas principales | Restricciones / índices |
 |---|---|---|

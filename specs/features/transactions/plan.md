@@ -264,7 +264,7 @@ Todos exigen sesión `active`; `POST`, `PUT` y `DELETE` exigen además CSRF y `O
 | FK compuestas (`account_id`, `user_id`) además de RLS | Solo filtro en el servicio y RLS | — | Aprobada (30/10/2026) |
 | Búsqueda con `search_text` normalizado en Python | Extensión `unaccent` de PostgreSQL | — | Aprobada (30/10/2026) |
 | `PUT` para editar movimientos | `PATCH` parcial | — | Aprobada (30/10/2026) |
-| Paginación por cursor opaco (keyset por la clave de orden + `created_at` + `id`), según DP-API-06 | `offset`/`limit` (versión inicial de este plan, contraria a ADR-0001) | [`ADR-0001`](../../../docs/decisions/ADR-0001-stack-tecnologico.md) | Propuesta (30/10/2026) |
+| Paginación por cursor opaco (keyset por la clave de orden + `created_at` + `id`), según DP-API-06 | `offset`/`limit` (versión inicial de este plan, contraria a ADR-0001) | [`ADR-0001`](../../../docs/decisions/ADR-0001-stack-tecnologico.md) | Aprobada (30/10/2026) |
 | Filtros por `from`/`to` en la API (los periodos se calculan en el frontend) | Periodos con nombre en la API | — | Aprobada (30/10/2026) |
 
 ## 15. Historial de cambios
@@ -275,3 +275,4 @@ Todos exigen sesión `active`; `POST`, `PUT` y `DELETE` exigen además CSRF y `O
 | 30/10/2026 | Plan completo a partir de la spec aprobada; propone ADR-0005 (modelo de movimientos). Pasa a `En revisión`. | Claude Code |
 | 30/10/2026 | Aprobado por la usuaria, con las seis decisiones de §14 (ADR-0005 pasa a `Aceptada`). | Claude Code |
 | 30/10/2026 | T-TRX-INT-01: la paginación pasa de `offset` a cursor opaco para cumplir DP-API-06 (ADR-0001), que el plan aprobado contradecía. El orden por monto usa el valor absoluto (los ajustes pueden ser negativos). Pendiente de confirmación de la usuaria. | Claude Code |
+| 30/10/2026 | La usuaria confirma la paginación por cursor. | Claude Code |

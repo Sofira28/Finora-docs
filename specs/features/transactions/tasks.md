@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Identificador | `FEAT-TRX` |
-| Estado | `Aprobado` |
+| Estado | `En progreso` |
 | Especificación | [`spec.md`](spec.md) (Aprobado, 30/10/2026) |
 | Plan técnico | [`plan.md`](plan.md) (Aprobado, 30/10/2026) |
 | Última actualización | 30/10/2026 |
@@ -26,7 +26,7 @@ Orden sugerido: INT-01 → DB-01 → BE-01 a BE-04 → FE-01 a FE-04 → QA-01 a
 
 ## Integración
 
-- [ ] **T-TRX-INT-01**: Registrar los 5 endpoints de `plan.md` §6 en `specs/api-contracts.md` (§3 y una sección nueva "Transacciones", estado `Aprobado`, sin implementar), la tabla de `plan.md` §5 en `specs/database.md` §5 y DP-DB-03 como resuelto (ADR-0005).
+- [x] **T-TRX-INT-01**: Registrar los 5 endpoints de `plan.md` §6 en `specs/api-contracts.md` (§3 y una sección nueva "Transacciones", estado `Aprobado`, sin implementar), la tabla de `plan.md` §5 en `specs/database.md` §5 y DP-DB-03 como resuelto (ADR-0005).
   - **Aplicación:** `shared`
   - **Dependencias:** Plan aprobado
   - **Prioridad:** Alta
@@ -35,7 +35,7 @@ Orden sugerido: INT-01 → DB-01 → BE-01 a BE-04 → FE-01 a FE-04 → QA-01 a
 
 ## Base de datos
 
-- [ ] **T-TRX-DB-01**: Migración `0005_transactions`: única (`id`, `user_id`) en `accounts`; tabla `transactions` con `CHECK` por tipo, categoría y destino, FK compuestas `NO ACTION`, índices, RLS y política `transactions_owner`. Modelo `Transaction` y enums registrados en `db/models.py`.
+- [x] **T-TRX-DB-01**: Migración `0005_transactions`: única (`id`, `user_id`) en `accounts`; tabla `transactions` con `CHECK` por tipo, categoría y destino, FK compuestas `NO ACTION`, índices, RLS y política `transactions_owner`. Modelo `Transaction` y enums registrados en `db/models.py`.
   - **Aplicación:** `finora-back`
   - **Dependencias:** T-TRX-INT-01
   - **Prioridad:** Alta
@@ -155,3 +155,5 @@ Orden sugerido: INT-01 → DB-01 → BE-01 a BE-04 → FE-01 a FE-04 → QA-01 a
 | 29/10/2026 | Creación (inicialización de la feature) | Claude Code |
 | 30/10/2026 | Tareas derivadas del plan (`En revisión`): INT-01, DB-01, BE-01 a 04, FE-01 a 04, QA-01 a 05 e INT-02. | Claude Code |
 | 30/10/2026 | Aprobadas junto con el plan. | Claude Code |
+| 30/10/2026 | T-TRX-INT-01 completada: §3 y §6 de `api-contracts.md`, §3 y §5.3 de `database.md`. Paginación por cursor (DP-API-06) confirmada por la usuaria; orden por monto en valor absoluto; claves de categoría en inglés. | Claude Code |
+| 30/10/2026 | T-TRX-DB-01 completada: migración `0005_transactions` (única (`id`, `user_id`) en `accounts`, tabla con `CHECK`, FK compuestas `NO ACTION`, índices y RLS), modelo `Transaction` con `TransactionType` y `Category`. 33 pruebas nuevas de esquema y RLS; suite completa 590/590, ruff, mypy y `alembic check` limpios. El `CHECK` de categoría exige `IS NOT NULL` explícito, porque `NULL IN (...)` es NULL y el `CHECK` lo dejaría pasar. | Claude Code |
