@@ -6,7 +6,7 @@
 | Estado | `Aprobado` |
 | Especificación | [`spec.md`](spec.md) (`Aprobado`, 30/10/2026) |
 | Tareas | [`tasks.md`](tasks.md) |
-| Última actualización | 30/10/2026 |
+| Última actualización | 31/10/2026 |
 
 > Plan contra el estado real del repositorio: stack de [ADR-0001](../../../docs/decisions/ADR-0001-stack-tecnologico.md), RLS de [ADR-0004](../../../docs/decisions/ADR-0004-row-level-security.md) y la implementación de `accounts`.
 
@@ -55,7 +55,7 @@
 ### 3.1 Navegación y rutas
 
 - `NAV_ITEMS`: "Movimientos" entre "Inicio" y "Cuentas", con un ícono nuevo (`TransactionsIcon`, flechas en sentidos opuestos).
-- Ruta `/movimientos` (`lazy`). Los filtros viven en la URL (`?q=&desde=&hasta=&tipo=&categoria=&cuenta=&orden=`), así que el botón Atrás y los enlaces conservan la búsqueda.
+- Ruta `/movimientos` (`lazy`). Los filtros viven en la URL (`?q=&periodo=&tipo=&categoria=&cuenta=&orden=`, con las claves del contrato como valores), así que el botón Atrás y los enlaces conservan la búsqueda. Los valores por defecto (este mes, fecha descendente) no se escriben.
 
 ### 3.2 Página Movimientos (`src/features/transactions/`)
 
@@ -277,3 +277,4 @@ Todos exigen sesión `active`; `POST`, `PUT` y `DELETE` exigen además CSRF y `O
 | 30/10/2026 | T-TRX-INT-01: la paginación pasa de `offset` a cursor opaco para cumplir DP-API-06 (ADR-0001), que el plan aprobado contradecía. El orden por monto usa el valor absoluto (los ajustes pueden ser negativos). Pendiente de confirmación de la usuaria. | Claude Code |
 | 30/10/2026 | La usuaria confirma la paginación por cursor. | Claude Code |
 | 30/10/2026 | T-TRX-BE-02: (1) un solo modelo de petición con todos los campos opcionales salvo `type`, `date` y `account_id`, en lugar de una unión discriminada: los errores de Pydantic quedan con `loc: ["body", "<campo>"]` como en `accounts`, y el servicio rechaza los campos que no corresponden al tipo (VAL-TRX-11); el contrato no cambia. (2) La suma de efectos en SQL vive en `transactions/ledger.py` (`effects_by_account`, generada desde `effects.SIGNS`); BE-03 la usa desde `accounts`. (3) El índice del listado pasa a `id DESC` (migración 0005 corregida antes de llegar a `main`). (4) El cursor guarda el orden y una huella de los filtros: con otros filtros u otro orden responde `422`. | Claude Code |
+| 31/10/2026 | T-TRX-FE-02: (1) la URL guarda el periodo (`periodo=this_month`…) en lugar de `desde`/`hasta`: un enlace a "Este mes" sigue siendo el mes en curso, y "Todo el historial" necesita un valor propio porque sin parámetros el periodo es "este mes". (2) El menú de cada fila (Editar, Eliminar) y el botón "Añadir movimiento" llegan con FE-03 y FE-04, que tienen el formulario y la confirmación. (3) No se trasladan la columna "Estado" ni la nota de pendientes del diseño (sin estados de movimiento en esta versión); el resumen agrega "Ahorro neto", que el diseño no muestra y RF-TRX-06 exige. (4) `useMediaQuery` pasa de `app/shell/` a `lib/hooks/` para usarlo desde la feature. El contrato no cambia. | Claude Code |
