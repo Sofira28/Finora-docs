@@ -37,12 +37,12 @@
 | DP-DB-02 | `NUMERIC(19,4)`; `decimal.Decimal` en el dominio; redondeo `ROUND_HALF_EVEN`. | [ADR-0001](../docs/decisions/ADR-0001-stack-tecnologico.md) |
 | DP-DB-06 | Filtro obligatorio por `user_id` en la capa de repositorio + Row-Level Security como defensa en profundidad. | [ADR-0001](../docs/decisions/ADR-0001-stack-tecnologico.md) |
 | DP-DB-07 | Instantes en `timestamptz` (UTC); fechas contables en `DATE` interpretadas en `America/Bogota`. | [ADR-0001](../docs/decisions/ADR-0001-stack-tecnologico.md) |
+| DP-DB-03 | Un movimiento por fila, también las transferencias (`account_id` de origen y `destination_account_id`); saldos calculados al leer, sin columnas de saldo. | [ADR-0005](../docs/decisions/ADR-0005-modelo-de-movimientos.md) |
 
 ## 4. Decisiones pendientes
 
 | ID | Decisión |
 |---|---|
-| DP-DB-03 | Modelo de transferencias (un registro con origen y destino vs. dos movimientos enlazados). |
 | DP-DB-04 | Borrado lógico vs. físico; retención de datos. |
 | DP-DB-05 | Auditoría e historial de cambios de movimientos. |
 
@@ -82,3 +82,18 @@ Aprobado el 30/10/2026 en [`features/accounts/plan.md`](features/accounts/plan.m
 | `accounts` | `id` (UUIDv7), `user_id` (FK `users`, `ON DELETE CASCADE`), `name`, `type`, `institution` (nullable), `opening_balance` (`numeric(19,4)`), `credit_limit` (`numeric(19,4)`, nullable), `statement_day` y `payment_due_day` (`smallint`, nullable), `archived_at` (nullable), `created_at`, `updated_at` | `type` en `bank`, `wallet`, `cash`, `savings`, `investment`, `credit_card`; campos de tarjeta todos llenos si es `credit_card` y todos vacíos si no; `credit_limit > 0`; días de 1 a 31; `name` de 1 a 60 caracteres sin espacios en los extremos; único en (`user_id`, `lower(name)`), que también sirve para buscar por `user_id` |
 
 **RLS (DP-DB-06, [ADR-0004](../docs/decisions/ADR-0004-row-level-security.md)):** `accounts` es la primera tabla con RLS. Política `accounts_owner` (`USING` y `WITH CHECK`): `user_id = nullif(current_setting('finora.user_id', true), '')::uuid`. La API trabaja con el rol `finora_app` (sin `SUPERUSER` ni `BYPASSRLS`, no dueño de las tablas), que la migración crea si no existe; `finora.user_id` se fija al comenzar cada transacción de una petición autenticada.
+
+### 5.3 Movimientos (`transactions`)
+
+Aprobado el 30/10/2026 en [`features/transactions/plan.md`](features/transactions/plan.md) §5 y [ADR-0005](../docs/decisions/ADR-0005-modelo-de-movimientos.md). Migración `0005_transactions` (sin implementar).
+
+| Tabla | Columnas principales | Restricciones / índices |
+|---|---|---|
+| `accounts` (cambio) | — | Nueva única (`id`, `user_id`), destino de las FK compuestas de `transactions` |
+| `transactions` | `id` (UUIDv7), `user_id` (FK `users`, `ON DELETE CASCADE`), `type`, `amount` (`numeric(19,4)`), `occurred_on` (`date`), `account_id`, `destination_account_id` (nullable), `category` (nullable), `description` (nullable), `note` (nullable), `search_text`, `created_at`, `updated_at` | `type` en `expense`, `income`, `transfer`, `adjustment`; `amount > 0` salvo en `adjustment` (`<> 0`); destino presente si y solo si `transfer`, y distinto del origen; categoría presente si y solo si `expense` o `income`, con las claves de gasto solo en `expense` y las de ingreso solo en `income` (`uncategorized` en ambos); `description` hasta 80 y `note` hasta 500 caracteres; FK compuestas (`account_id`, `user_id`) y (`destination_account_id`, `user_id`) → `accounts` (`id`, `user_id`) `NO ACTION`; índices (`user_id`, `occurred_on DESC`, `created_at DESC`, `id`), `account_id` y `destination_account_id` |
+
+- `search_text`: descripción y nota en minúsculas y sin tildes, normalizadas en Python; se escribe junto con ellas.
+- Las FK `NO ACTION` impiden borrar una cuenta con movimientos (RN-TRX-10). Al borrar un usuario, la cascada elimina cuentas y movimientos en la misma sentencia.
+- Las FK compuestas garantizan que las cuentas de un movimiento son del mismo usuario que el movimiento.
+
+**RLS (DP-DB-06, [ADR-0004](../docs/decisions/ADR-0004-row-level-security.md)):** política `transactions_owner` (`USING` y `WITH CHECK`), igual a `accounts_owner`.

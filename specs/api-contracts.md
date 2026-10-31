@@ -62,6 +62,11 @@
 | `accounts` | POST | `/api/v1/accounts/{id}/archive` | Implementado en `finora-back` (30/10/2026); `finora-web` pendiente | v1 |
 | `accounts` | POST | `/api/v1/accounts/{id}/restore` | Implementado en `finora-back` (30/10/2026); `finora-web` pendiente | v1 |
 | `accounts` | DELETE | `/api/v1/accounts/{id}` | Implementado en `finora-back` (30/10/2026); `finora-web` pendiente | v1 |
+| `transactions` | GET | `/api/v1/transactions` | Aprobado (30/10/2026), sin implementar | v1 |
+| `transactions` | POST | `/api/v1/transactions` | Aprobado (30/10/2026), sin implementar | v1 |
+| `transactions` | GET | `/api/v1/transactions/{id}` | Aprobado (30/10/2026), sin implementar | v1 |
+| `transactions` | PUT | `/api/v1/transactions/{id}` | Aprobado (30/10/2026), sin implementar | v1 |
+| `transactions` | DELETE | `/api/v1/transactions/{id}` | Aprobado (30/10/2026), sin implementar | v1 |
 
 ### GET `/api/v1/health`
 
@@ -302,7 +307,8 @@ Definidos en [`features/accounts/plan.md`](features/accounts/plan.md) §6. Regla
 ```
 
 - `type`: `bank`, `wallet`, `cash`, `savings`, `investment` o `credit_card`. No cambia después de crear la cuenta.
-- `balance`: saldo actual (hoy igual a `opening_balance`; con `transactions`, más los movimientos). En tarjetas es la deuda.
+- `balance`: saldo actual = `opening_balance` + efecto de los movimientos de la cuenta (§6.2, RN-TRX-06). Mientras `transactions` no esté implementada, es igual a `opening_balance`. En tarjetas es la deuda.
+- `has_movements`: `true` si la cuenta es origen o destino de al menos un movimiento (RN-TRX-10).
 - `credit_card`: `null` si no es tarjeta. `available_credit` = cupo − deuda, mínimo 0 (un saldo a favor lo aumenta); `usage_percent` entero redondeado al par más cercano; `over_limit` si la deuda supera el cupo.
 
 ### 5.3 Endpoints
@@ -336,3 +342,132 @@ Definidos en [`features/accounts/plan.md`](features/accounts/plan.md) §6. Regla
 - **Request:** `{}` (como toda escritura, exige `Content-Type: application/json`, §4.1).
 - **204**. Definitivo.
 - **Errores:** `404` y `409 account_has_movements`.
+
+---
+
+## 6. Movimientos (`transactions`)
+
+Definidos en [`features/transactions/plan.md`](features/transactions/plan.md) §6. Reglas de negocio en [`features/transactions/spec.md`](features/transactions/spec.md). Modelo de datos en [ADR-0005](../docs/decisions/ADR-0005-modelo-de-movimientos.md).
+
+### 6.1 Convenciones
+
+- Todos exigen sesión `active`; `POST`, `PUT` y `DELETE` exigen además CSRF y `Origin` (§4.1).
+- Solo se ven y modifican los movimientos del usuario de la sesión. Un movimiento de otro usuario o inexistente responde `404` con `code: "transaction_not_found"` y el título "No encontramos ese movimiento.".
+- Una cuenta de otro usuario o inexistente en la petición responde `422` en su campo ("Elige una de tus cuentas."), sin revelar si existe.
+- Montos y fechas como en §5.1: cadena decimal en COP (entrada de 0 a 2 decimales, salida con 2) y fecha ISO `AAAA-MM-DD` (DP-API-04), interpretada en `America/Bogota`.
+- Los saldos y el resumen los calcula solo el backend.
+- Las respuestas llevan `Cache-Control: no-store`.
+- Un `{id}` que no es un UUID responde `422`.
+
+  | `code` | Estado | Cuándo |
+  |---|---|---|
+  | `transaction_not_found` | 404 | Movimiento inexistente o de otro usuario |
+  | `validation_failed` | 422 | Regla incumplida en un campo (VAL-TRX-01 a 09 y 11), parámetro de consulta inválido o cursor inválido, con `errors[].message` en es-CO |
+
+### 6.2 Modelo `Transaction`
+
+```json
+{
+  "id": "0193…",
+  "type": "transfer",
+  "amount": "820000.00",
+  "date": "2026-10-30",
+  "account_id": "0193…",
+  "destination_account_id": "0193…",
+  "category": null,
+  "description": null,
+  "note": null,
+  "created_at": "2026-10-30T15:00:00Z",
+  "updated_at": "2026-10-30T15:00:00Z"
+}
+```
+
+- `type`: `expense` (gasto), `income` (ingreso), `transfer` (transferencia entre cuentas propias) o `adjustment` (ajuste de saldo).
+- `amount`: positivo; en `adjustment`, la diferencia firmada aplicada al saldo (p. ej. `"-15000.00"`).
+- `account_id`: la cuenta del movimiento (en `transfer`, la de origen). `destination_account_id`: solo en `transfer`; `null` en los demás.
+- `category`: solo en `expense` e `income`; `null` en los demás.
+
+  | Tipo | Claves de `category` |
+  |---|---|
+  | `expense` | `housing` (vivienda), `groceries` (mercado), `transport` (transporte), `restaurants` (restaurantes), `utilities` (servicios), `health` (salud), `entertainment` (entretenimiento), `subscriptions` (suscripciones), `debts` (deudas), `uncategorized` (sin categoría) |
+  | `income` | `salary` (salario), `freelance` (freelance), `other_income` (otros ingresos), `uncategorized` (sin categoría) |
+
+- `description`: de 1 a 80 caracteres; obligatoria en `expense` e `income`, `null` posible en los demás. `note`: hasta 500 caracteres o `null`.
+- Los nombres de las cuentas no se incluyen: el cliente los toma de `GET /accounts`.
+- **Efecto en el saldo** (RN-TRX-02 a 04): en cuentas que no son tarjeta, `expense` resta, `income` suma, `transfer` resta en el origen y suma en el destino. En tarjetas (saldo = deuda) los signos se invierten. `adjustment` suma su monto firmado.
+
+### 6.3 `TransactionRequest`
+
+Los campos dependen de `type`. Un campo que no corresponde al tipo, o cualquier campo desconocido, responde `422` (VAL-TRX-11).
+
+| `type` | Campos obligatorios | Opcionales |
+|---|---|---|
+| `expense`, `income` | `amount`, `date`, `account_id`, `category`, `description` | `note` |
+| `transfer` | `amount`, `date`, `account_id`, `destination_account_id` | `description`, `note` |
+| `adjustment` | `target_balance`, `date`, `account_id` | `description`, `note` |
+
+- `amount` > 0 con hasta 2 decimales y 15 dígitos enteros.
+- `date` entre `2000-01-01` y hoy en `America/Bogota` (VAL-TRX-02).
+- `account_id` y `destination_account_id`: cuentas propias, distintas entre sí (VAL-TRX-05) y activas (VAL-TRX-04). Al editar, se acepta la misma cuenta archivada que ya tenía el movimiento (RN-TRX-08).
+- `target_balance` (ajuste): saldo real de la cuenta (en tarjetas, la deuda real); puede ser negativo. El backend guarda `amount = target_balance − saldo actual`, sin contar el propio ajuste cuando se edita. Si da 0, responde `422` en `target_balance` (VAL-TRX-09).
+
+### 6.4 Endpoints
+
+#### GET `/api/v1/transactions`
+
+- **Query** (todos opcionales):
+
+  | Parámetro | Valores | Notas |
+  |---|---|---|
+  | `q` | Texto, hasta 100 caracteres | Busca sin distinguir mayúsculas ni tildes en descripción, nota, nombre de la categoría y nombre de la cuenta (origen o destino) |
+  | `from`, `to` | Fechas ISO | Inclusivas; `from` > `to` responde `422` |
+  | `type` | `expense`, `income`, `transfer`, `adjustment` | |
+  | `category` | Claves de §6.2 | |
+  | `account_id` | UUID | Movimientos donde la cuenta es origen o destino; una cuenta ajena o inexistente da cero resultados |
+  | `sort` | `date_desc` (por defecto), `date_asc`, `amount_desc`, `amount_asc` | Por monto se ordena por su valor absoluto. Desempate: `created_at` y `id` en el mismo sentido |
+  | `cursor` | Opaco | El `next_cursor` de la respuesta anterior, con los mismos filtros y orden (DP-API-06). Inválido o de otro orden: `422` |
+  | `limit` | 1 a 100 (50 por defecto) | |
+
+- **200**:
+
+  ```json
+  {
+    "items": [Transaction],
+    "total": 60,
+    "next_cursor": "eyJ…",
+    "summary": {
+      "count": 60,
+      "income": "3200000.00",
+      "expense": "1480000.00",
+      "savings": "500000.00",
+      "transfers": "200000.00"
+    }
+  }
+  ```
+
+  - `next_cursor`: `null` en la última página.
+  - `total` y `summary` cubren **todos** los movimientos que cumplen los filtros, no solo la página (RF-TRX-06), y son iguales en todas las páginas.
+  - `summary` (RN-TRX-05): `income` = suma de `income`; `expense` = suma de `expense`; `savings` (ahorro neto, puede ser negativo) = transferencias hacia `savings` o `investment` desde otros tipos de cuenta, menos las que salen de ahí hacia otros tipos; `transfers` = el resto de transferencias. Los ajustes no suman en ninguna cifra, pero sí en `count`.
+
+#### POST `/api/v1/transactions`
+
+- **Request:** `TransactionRequest`, p. ej. `{"type": "expense", "amount": "120000", "date": "2026-10-30", "account_id": "0193…", "category": "groceries", "description": "Mercado de la semana"}`.
+- **201** `Transaction`.
+- **Errores:** `422`.
+
+#### GET `/api/v1/transactions/{id}`
+
+- **200** `Transaction`.
+- **Errores:** `404`.
+
+#### PUT `/api/v1/transactions/{id}`
+
+- **Request:** `TransactionRequest` completo; el tipo puede cambiar (RF-TRX-07).
+- **200** `Transaction`.
+- **Errores:** `404` y `422`.
+
+#### DELETE `/api/v1/transactions/{id}`
+
+- **Request:** `{}` (§4.1).
+- **204**. Definitivo; los saldos se recalculan.
+- **Errores:** `404`.

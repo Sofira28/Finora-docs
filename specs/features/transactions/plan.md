@@ -93,7 +93,7 @@ Pantalla `movements` y modal de movimiento (pestaña "Manual"). No se trasladan:
   - `date` ISO; descripción de 1 a 80 caracteres y nota de hasta 500, sin caracteres de control (la nota admite saltos de línea);
   - respuestas `TransactionResponse`, `TransactionPage` y `Summary`.
 - **`finora/transactions/service.py`**:
-  - `list_transactions(filtros, orden, offset)` → página + total + resumen;
+  - `list_transactions(filtros, orden, cursor)` → página + total + resumen;
   - `get`, `create`, `replace` y `delete`;
   - valida en el servicio:
     - cuentas propias (VAL-TRX-03) y activas (VAL-TRX-04, RN-TRX-08);
@@ -150,7 +150,7 @@ Todos exigen sesión `active`; `POST`, `PUT` y `DELETE` exigen además CSRF y `O
 
 | Método | Ruta | Descripción | Request | Response | Errores |
 |---|---|---|---|---|---|
-| GET | `/api/v1/transactions` | Listado filtrado y paginado con resumen | Query: `q`, `from`, `to`, `type`, `category`, `account_id`, `sort` (`date_desc` por defecto, `date_asc`, `amount_desc`, `amount_asc`), `offset` (0), `limit` (50, máx. 100) | `200 {items: [Transaction], total, next_offset, summary: {count, income, expense, savings, transfers}}` | 401, 422 |
+| GET | `/api/v1/transactions` | Listado filtrado y paginado con resumen | Query: `q`, `from`, `to`, `type`, `category`, `account_id`, `sort` (`date_desc` por defecto, `date_asc`, `amount_desc`, `amount_asc`), `cursor` (opaco), `limit` (50, máx. 100) | `200 {items: [Transaction], total, next_cursor, summary: {count, income, expense, savings, transfers}}` | 401, 422 |
 | POST | `/api/v1/transactions` | Crear (RF-TRX-01 a 03) | `TransactionRequest` | `201 Transaction` | 401, 403, 422 |
 | GET | `/api/v1/transactions/{id}` | Un movimiento | — | `200 Transaction` | 401, 404 |
 | PUT | `/api/v1/transactions/{id}` | Reemplazar (RF-TRX-07; el tipo puede cambiar) | `TransactionRequest` | `200 Transaction` | 401, 403, 404, 422 |
@@ -187,7 +187,7 @@ Todos exigen sesión `active`; `POST`, `PUT` y `DELETE` exigen además CSRF y `O
 
 ## 7. Flujo de datos
 
-1. **Lectura:** filtros en la URL → `GET /transactions` → `UserDb` fija `finora.user_id` → el servicio consulta con `user_id` + RLS, la página con `ORDER BY … OFFSET/LIMIT`, `count` y el resumen en la misma transacción → cadenas decimales → TanStack Query (`useInfiniteQuery`) → `formatMoney` y `formatDate` al mostrar.
+1. **Lectura:** filtros en la URL → `GET /transactions` → `UserDb` fija `finora.user_id` → el servicio consulta con `user_id` + RLS, la página con `ORDER BY … LIMIT` a partir del cursor (keyset), `count` y el resumen en la misma transacción → cadenas decimales → TanStack Query (`useInfiniteQuery`) → `formatMoney` y `formatDate` al mostrar.
 2. **Escritura:**
    - formulario (zod como ayuda) → `MoneyField` → `POST`/`PUT` con CSRF;
    - Pydantic (formato y campos por tipo) → servicio (reglas) → `commit`;
@@ -264,6 +264,7 @@ Todos exigen sesión `active`; `POST`, `PUT` y `DELETE` exigen además CSRF y `O
 | FK compuestas (`account_id`, `user_id`) además de RLS | Solo filtro en el servicio y RLS | — | Aprobada (30/10/2026) |
 | Búsqueda con `search_text` normalizado en Python | Extensión `unaccent` de PostgreSQL | — | Aprobada (30/10/2026) |
 | `PUT` para editar movimientos | `PATCH` parcial | — | Aprobada (30/10/2026) |
+| Paginación por cursor opaco (keyset por la clave de orden + `created_at` + `id`), según DP-API-06 | `offset`/`limit` (versión inicial de este plan, contraria a ADR-0001) | [`ADR-0001`](../../../docs/decisions/ADR-0001-stack-tecnologico.md) | Propuesta (30/10/2026) |
 | Filtros por `from`/`to` en la API (los periodos se calculan en el frontend) | Periodos con nombre en la API | — | Aprobada (30/10/2026) |
 
 ## 15. Historial de cambios
@@ -273,3 +274,4 @@ Todos exigen sesión `active`; `POST`, `PUT` y `DELETE` exigen además CSRF y `O
 | 29/10/2026 | Creación (inicialización de la feature) | Claude Code |
 | 30/10/2026 | Plan completo a partir de la spec aprobada; propone ADR-0005 (modelo de movimientos). Pasa a `En revisión`. | Claude Code |
 | 30/10/2026 | Aprobado por la usuaria, con las seis decisiones de §14 (ADR-0005 pasa a `Aceptada`). | Claude Code |
+| 30/10/2026 | T-TRX-INT-01: la paginación pasa de `offset` a cursor opaco para cumplir DP-API-06 (ADR-0001), que el plan aprobado contradecía. El orden por monto usa el valor absoluto (los ajustes pueden ser negativos). Pendiente de confirmación de la usuaria. | Claude Code |

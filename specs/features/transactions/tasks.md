@@ -69,7 +69,7 @@ Orden sugerido: INT-01 → DB-01 → BE-01 a BE-04 → FE-01 a FE-04 → QA-01 a
   - **Aplicación:** `finora-back`
   - **Dependencias:** T-TRX-BE-03
   - **Prioridad:** Alta
-  - **Criterios de aceptación:** CA-TRX-01 a 12 por HTTP; respuestas idénticas al contrato; `401` sin sesión, `403` sin CSRF, `404` para movimientos ajenos, `422` para cuentas ajenas; paginación con `next_offset`
+  - **Criterios de aceptación:** CA-TRX-01 a 12 por HTTP; respuestas idénticas al contrato; `401` sin sesión, `403` sin CSRF, `404` para movimientos ajenos, `422` para cuentas ajenas; paginación con `next_cursor` (cursor inválido → `422`)
   - **Verificación:** `uv run pytest tests/integration/test_transactions_api.py && uv run ruff check . && uv run mypy .`
 
 ## Frontend (`finora-web`)
