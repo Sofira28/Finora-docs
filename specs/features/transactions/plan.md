@@ -139,7 +139,7 @@ Migración **`0005_transactions`**:
   - Las FK a `accounts` son `NO ACTION`: la base de datos impide borrar una cuenta con movimientos, además del servicio (RN-TRX-10).
   - Al borrar un usuario se eliminan en la misma sentencia sus cuentas y sus movimientos, y la comprobación al final de la sentencia pasa.
 - **Índices**:
-  - (`user_id`, `occurred_on DESC`, `created_at DESC`, `id`) para el listado;
+  - (`user_id`, `occurred_on DESC`, `created_at DESC`, `id DESC`) para el listado, todo en el mismo sentido para recorrerlo con el cursor en ambos órdenes;
   - `account_id` y `destination_account_id` para saldos y `has_movements`.
 - **RLS**: `ENABLE ROW LEVEL SECURITY` y política `transactions_owner`, como `accounts_owner`.
 - `specs/database.md` §5 registra el esquema y DP-DB-03 pasa a resuelto (ADR-0005).
@@ -276,3 +276,4 @@ Todos exigen sesión `active`; `POST`, `PUT` y `DELETE` exigen además CSRF y `O
 | 30/10/2026 | Aprobado por la usuaria, con las seis decisiones de §14 (ADR-0005 pasa a `Aceptada`). | Claude Code |
 | 30/10/2026 | T-TRX-INT-01: la paginación pasa de `offset` a cursor opaco para cumplir DP-API-06 (ADR-0001), que el plan aprobado contradecía. El orden por monto usa el valor absoluto (los ajustes pueden ser negativos). Pendiente de confirmación de la usuaria. | Claude Code |
 | 30/10/2026 | La usuaria confirma la paginación por cursor. | Claude Code |
+| 30/10/2026 | T-TRX-BE-02: (1) un solo modelo de petición con todos los campos opcionales salvo `type`, `date` y `account_id`, en lugar de una unión discriminada: los errores de Pydantic quedan con `loc: ["body", "<campo>"]` como en `accounts`, y el servicio rechaza los campos que no corresponden al tipo (VAL-TRX-11); el contrato no cambia. (2) La suma de efectos en SQL vive en `transactions/ledger.py` (`effects_by_account`, generada desde `effects.SIGNS`); BE-03 la usa desde `accounts`. (3) El índice del listado pasa a `id DESC` (migración 0005 corregida antes de llegar a `main`). (4) El cursor guarda el orden y una huella de los filtros: con otros filtros u otro orden responde `422`. | Claude Code |
