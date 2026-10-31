@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Estado | `Draft` |
-| Última actualización | 29/10/2026 |
+| Última actualización | 30/10/2026 |
 
 ## 1. Visión
 
@@ -70,4 +70,4 @@ Ver `CLAUDE.md` §10–11. La fuente visual de verdad es el proyecto de Claude D
 | PA-PRJ-02 | ¿Plataformas objetivo: solo web responsive, o también apps nativas o PWA? |
 | PA-PRJ-03 | ¿Integración con bancos colombianos (open finance) o solo registro manual e importación? |
 | PA-PRJ-04 | ¿Alcance del MVP: qué módulos entran en la primera versión? |
-| PA-PRJ-05 | ¿Definición precisa de "saldo disponible" y "patrimonio neto" (qué activos y pasivos incluyen)? |
+| PA-PRJ-05 | ~~¿Definición precisa de "saldo disponible" y "patrimonio neto"?~~ Resuelta el 30/10/2026 en [`features/accounts/spec.md`](features/accounts/spec.md) RN-ACC-03 a 05. |

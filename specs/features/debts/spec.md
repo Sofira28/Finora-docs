@@ -26,7 +26,7 @@ Esta feature debe respetar las reglas financieras y de seguridad definidas en [`
 | PA-DEBT-01 | ¿Se incluyen préstamos que el usuario otorga a terceros? | Abierta |
 | PA-DEBT-02 | ¿Se calculan intereses y tablas de amortización? ¿Con qué métodos? | Abierta |
 | PA-DEBT-03 | ¿Cómo se relacionan los pagos de deuda con las transacciones? | Abierta |
-| PA-DEBT-04 | ¿Las tarjetas de crédito se gestionan aquí o en `accounts`? | Abierta |
+| PA-DEBT-04 | ¿Las tarjetas de crédito se gestionan aquí o en `accounts`? | Resuelta (30/10/2026): en `accounts` (cupo, deuda, corte y pago); intereses y proyecciones aquí. Ver `accounts/spec.md`. |
 
 ## Próximo paso
 
