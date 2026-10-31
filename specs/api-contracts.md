@@ -307,7 +307,7 @@ Definidos en [`features/accounts/plan.md`](features/accounts/plan.md) §6. Regla
 ```
 
 - `type`: `bank`, `wallet`, `cash`, `savings`, `investment` o `credit_card`. No cambia después de crear la cuenta.
-- `balance`: saldo actual = `opening_balance` + efecto de los movimientos de la cuenta (§6.2, RN-TRX-06). Mientras `transactions` no esté implementada, es igual a `opening_balance`. En tarjetas es la deuda.
+- `balance`: saldo actual = `opening_balance` + efecto de los movimientos de la cuenta (§6.2, RN-TRX-06). Calculado al leer, en una sola consulta para todo el listado (ADR-0005); en `finora-back` desde el 30/10/2026. En tarjetas es la deuda.
 - `has_movements`: `true` si la cuenta es origen o destino de al menos un movimiento (RN-TRX-10).
 - `credit_card`: `null` si no es tarjeta. `available_credit` = cupo − deuda, mínimo 0 (un saldo a favor lo aumenta); `usage_percent` entero redondeado al par más cercano; `over_limit` si la deuda supera el cupo.
 
