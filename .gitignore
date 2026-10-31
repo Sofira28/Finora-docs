@@ -1,0 +1,9 @@
+# Las aplicaciones tienen su propio repositorio (ADR-0003).
+/finora-web/
+/finora-back/
+
+# Sistema y editores
+.DS_Store
+.idea/
+.vscode/
+*.swp
