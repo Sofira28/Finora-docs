@@ -40,4 +40,4 @@ Las decisiones abiertas se listan en:
 | [ADR-0001](ADR-0001-stack-tecnologico.md) | Stack tecnológico inicial de finora-web y finora-back | Aceptada |
 | [ADR-0002](ADR-0002-autenticacion-google-y-correo.md) | Inicio de sesión con Google, envío de correos y estado de autenticación | Aceptada |
 | [ADR-0003](ADR-0003-repositorios.md) | Un repositorio por aplicación y uno para la documentación | Aceptada |
-| [ADR-0004](ADR-0004-row-level-security.md) | Row-Level Security con un rol de aplicación sin privilegios | Propuesta |
+| [ADR-0004](ADR-0004-row-level-security.md) | Row-Level Security con un rol de aplicación sin privilegios | Aceptada |

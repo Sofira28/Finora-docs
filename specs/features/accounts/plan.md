@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Identificador | `FEAT-ACC` |
-| Estado | `En revisión` |
+| Estado | `Aprobado` |
 | Especificación | [`spec.md`](spec.md) (Aprobado, 30/10/2026) |
 | Tareas | [`tasks.md`](tasks.md) |
 | Última actualización | 30/10/2026 |
@@ -41,7 +41,7 @@
 - **Saldo actual = saldo inicial** mientras no exista `transactions` (RN-ACC-02).
   - El servicio expone una sola función, `movement_count(account)`, que hoy devuelve 0.
   - `transactions` la reemplazará. Es el único punto que cambia para RF-ACC-06 y RF-ACC-09.
-- **Aislamiento con dos capas**, según [ADR-0004](../../../docs/decisions/ADR-0004-row-level-security.md) (propuesta):
+- **Aislamiento con dos capas**, según [ADR-0004](../../../docs/decisions/ADR-0004-row-level-security.md):
   - todas las consultas filtran por `user_id`;
   - además hay RLS de PostgreSQL, con un rol de aplicación sin privilegios.
 - **Frontend**:
@@ -265,10 +265,10 @@ Todos exigen sesión `active`. `POST`, `PATCH` y `DELETE` exigen además CSRF y 
 
 | Decisión | Alternativas consideradas | ADR | Estado |
 |---|---|---|---|
-| RLS con rol de aplicación `finora_app` vía `SET ROLE` y `finora.user_id` por transacción | RLS sin cambiar de rol (sin efecto), dos URL de conexión, solo filtro en código | [`ADR-0004`](../../../docs/decisions/ADR-0004-row-level-security.md) | Propuesta |
-| Estructura de la aplicación (`AppShell`) solo con las secciones implementadas | Mostrar las 15 secciones con "Próximamente" | — (decisión de producto en este plan) | Propuesta |
-| Íconos SVG propios en lugar de Material Symbols (CD-08 sigue abierta) | Fuente Material Symbols desde Google Fonts | — | Propuesta |
-| Totales en la misma respuesta del listado | Endpoint aparte `/accounts/summary` | — | Propuesta |
+| RLS con rol de aplicación `finora_app` vía `SET ROLE` y `finora.user_id` por transacción | RLS sin cambiar de rol (sin efecto), dos URL de conexión, solo filtro en código | [`ADR-0004`](../../../docs/decisions/ADR-0004-row-level-security.md) | Aceptada (30/10/2026) |
+| Estructura de la aplicación (`AppShell`) solo con las secciones implementadas | Mostrar las 15 secciones con "Próximamente" | — (decisión de producto en este plan) | Aprobada (30/10/2026) |
+| Íconos SVG propios en lugar de Material Symbols (CD-08 sigue abierta) | Fuente Material Symbols desde Google Fonts | — | Aprobada (30/10/2026) |
+| Totales en la misma respuesta del listado | Endpoint aparte `/accounts/summary` | — | Aprobada (30/10/2026) |
 
 ## 15. Historial de cambios
 
@@ -276,3 +276,4 @@ Todos exigen sesión `active`. `POST`, `PATCH` y `DELETE` exigen además CSRF y 
 |---|---|---|
 | 29/10/2026 | Creación (inicialización de la feature) | Claude Code |
 | 30/10/2026 | Plan completo a partir de la spec aprobada; propone ADR-0004 (RLS). Pasa a `En revisión`. | Claude Code |
+| 30/10/2026 | Aprobado por la usuaria, con las cuatro decisiones de §14 (ADR-0004 pasa a `Aceptada`). | Claude Code |

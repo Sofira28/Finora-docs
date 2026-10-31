@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Estado | `Draft` |
-| Última actualización | 29/10/2026 |
+| Última actualización | 30/10/2026 |
 
 > Motor seleccionado: PostgreSQL ([ADR-0001](../docs/decisions/ADR-0001-stack-tecnologico.md)). La §2 describe los **dominios de datos** de los módulos planificados (orientativos). La §5 registra los esquemas **aprobados** por feature.
 
@@ -50,7 +50,7 @@
 
 ### 5.1 Autenticación (`authentication`)
 
-Aprobado el 29/10/2026 en [`features/authentication/plan.md`](features/authentication/plan.md) §5. Migración `0001_auth`, **sin implementar**.
+Aprobado el 29/10/2026 en [`features/authentication/plan.md`](features/authentication/plan.md) §5. Migraciones `0001_auth` y `0002_google`, implementadas (30/10/2026).
 
 - Todos los instantes son `timestamptz` en UTC (DP-DB-07).
 - Todas las claves foráneas a `users` tienen `ON DELETE CASCADE`, salvo en `security_events` (RN-AUTH-07).
@@ -72,3 +72,13 @@ Aprobado el 29/10/2026 en [`features/authentication/plan.md`](features/authentic
 **RLS (DP-DB-06):** estas tablas no la usan. El inicio de sesión necesita buscar al usuario por su correo antes de saber quién es, y solo el módulo `auth` accede a ellas. RLS empieza con la primera tabla de datos financieros (`accounts`), que tendrá `users.id` como referencia.
 
 **Limpieza:** `purge_expired()` borra tokens, flujos OAuth, intentos y sesiones vencidos.
+
+### 5.2 Cuentas y tarjetas (`accounts`)
+
+Aprobado el 30/10/2026 en [`features/accounts/plan.md`](features/accounts/plan.md) §5. Migración `0003_accounts`, **sin implementar**.
+
+| Tabla | Columnas principales | Restricciones / índices |
+|---|---|---|
+| `accounts` | `id` (UUIDv7), `user_id` (FK `users`, `ON DELETE CASCADE`), `name`, `type`, `institution` (nullable), `opening_balance` (`numeric(19,4)`), `credit_limit` (`numeric(19,4)`, nullable), `statement_day` y `payment_due_day` (`smallint`, nullable), `archived_at` (nullable), `created_at`, `updated_at` | `type` en `bank`, `wallet`, `cash`, `savings`, `investment`, `credit_card`; campos de tarjeta todos llenos si es `credit_card` y todos vacíos si no; `credit_limit > 0`; días de 1 a 31; `name` de 1 a 60 caracteres sin espacios en los extremos; único en (`user_id`, `lower(name)`); índice en `user_id` |
+
+**RLS (DP-DB-06, [ADR-0004](../docs/decisions/ADR-0004-row-level-security.md)):** `accounts` es la primera tabla con RLS. Política `accounts_owner` (`USING` y `WITH CHECK`): `user_id = nullif(current_setting('finora.user_id', true), '')::uuid`. La API trabaja con el rol `finora_app` (sin `SUPERUSER` ni `BYPASSRLS`, no dueño de las tablas), que la migración crea si no existe; `finora.user_id` se fija al comenzar cada transacción de una petición autenticada.

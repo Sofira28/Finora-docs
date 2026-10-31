@@ -55,6 +55,13 @@
 | `authentication` | POST | `/api/v1/me/mfa/confirm` | Implementado (30/10/2026) | v1 |
 | `authentication` | POST | `/api/v1/me/mfa/disable` | Implementado (30/10/2026) | v1 |
 | `authentication` | DELETE | `/api/v1/me` | Implementado (30/10/2026) | v1 |
+| `accounts` | GET | `/api/v1/accounts` | Aprobado (30/10/2026), sin implementar | v1 |
+| `accounts` | POST | `/api/v1/accounts` | Aprobado (30/10/2026), sin implementar | v1 |
+| `accounts` | GET | `/api/v1/accounts/{id}` | Aprobado (30/10/2026), sin implementar | v1 |
+| `accounts` | PATCH | `/api/v1/accounts/{id}` | Aprobado (30/10/2026), sin implementar | v1 |
+| `accounts` | POST | `/api/v1/accounts/{id}/archive` | Aprobado (30/10/2026), sin implementar | v1 |
+| `accounts` | POST | `/api/v1/accounts/{id}/restore` | Aprobado (30/10/2026), sin implementar | v1 |
+| `accounts` | DELETE | `/api/v1/accounts/{id}` | Aprobado (30/10/2026), sin implementar | v1 |
 
 ### GET `/api/v1/health`
 
@@ -246,3 +253,83 @@ Todos exigen una sesión `active`. El usuario siempre sale de la sesión: ningú
 - **Request:** `{"confirmation": "ELIMINAR"}`
 - **204**. Borra al usuario y, en cascada, todos sus datos; cierra todas sus sesiones y borra la cookie. No es reversible (RN-AUTH-07).
 - **Errores:** `403 reauthentication_required` y `422` (si la confirmación no coincide).
+
+---
+
+## 5. Cuentas y tarjetas (`accounts`)
+
+Definidos en [`features/accounts/plan.md`](features/accounts/plan.md) §6. Reglas de negocio en [`features/accounts/spec.md`](features/accounts/spec.md).
+
+### 5.1 Convenciones
+
+- Todos exigen sesión `active`; `POST`, `PATCH` y `DELETE` exigen además CSRF y `Origin` (§4.1).
+- Solo se ven y modifican las cuentas del usuario de la sesión. Una cuenta de otro usuario o inexistente responde `404` con `code: "account_not_found"` y el título "No encontramos esa cuenta.".
+- Montos: cadena decimal en COP. La entrada acepta de 0 a 2 decimales (`"1250000"`, `"1250000.5"`); la salida siempre trae 2 (`"1250000.50"`). Un monto como número JSON se rechaza con `422`.
+- Los totales los calcula solo el backend.
+
+  | `code` | Estado | Cuándo |
+  |---|---|---|
+  | `account_not_found` | 404 | Cuenta inexistente o de otro usuario |
+  | `account_name_taken` | 409 | Ya existe una cuenta del usuario con ese nombre (sin distinguir mayúsculas) |
+  | `account_limit_reached` | 409 | El usuario ya tiene 100 cuentas |
+  | `account_has_movements` | 409 | Editar el saldo inicial o eliminar una cuenta con movimientos |
+  | `validation_failed` | 422 | Regla incumplida en un campo, con `errors[].message` en es-CO |
+
+### 5.2 Modelo `Account`
+
+```json
+{
+  "id": "0193…",
+  "name": "Tarjeta Órbita",
+  "type": "credit_card",
+  "institution": "Banco Andino",
+  "opening_balance": "820000.00",
+  "balance": "820000.00",
+  "has_movements": false,
+  "archived": false,
+  "credit_card": {
+    "credit_limit": "6000000.00",
+    "available_credit": "5180000.00",
+    "usage_percent": 14,
+    "over_limit": false,
+    "statement_day": 28,
+    "payment_due_day": 18
+  },
+  "created_at": "2026-10-30T15:00:00Z"
+}
+```
+
+- `type`: `bank`, `wallet`, `cash`, `savings`, `investment` o `credit_card`. No cambia después de crear la cuenta.
+- `balance`: saldo actual (hoy igual a `opening_balance`; con `transactions`, más los movimientos). En tarjetas es la deuda.
+- `credit_card`: `null` si no es tarjeta. `available_credit` = cupo − deuda, mínimo 0 (un saldo a favor lo aumenta); `usage_percent` entero redondeado al par más cercano; `over_limit` si la deuda supera el cupo.
+
+### 5.3 Endpoints
+
+#### GET `/api/v1/accounts`
+
+- **200** `{"accounts": [Account], "totals": {"available_balance": "2890000.00", "net_worth": "14070000.00", "credit_card_debt": "820000.00"}}`. Incluye activas y archivadas (`archived: true`); los totales solo cuentan las activas (RN-ACC-03 a 05 y 09).
+
+#### POST `/api/v1/accounts`
+
+- **Request:** `{"name": "Nómina", "type": "bank", "institution": "Banco Andino", "opening_balance": "2800000"}`. Con `type: "credit_card"` también `credit_limit`, `statement_day` y `payment_due_day` (1 a 31), obligatorios; en otros tipos están prohibidos.
+- **201** `Account`.
+- **Errores:** `409 account_name_taken`, `409 account_limit_reached` y `422`.
+
+#### GET `/api/v1/accounts/{id}`
+
+- **200** `Account`. **Errores:** `404`.
+
+#### PATCH `/api/v1/accounts/{id}`
+
+- **Request:** cualquier subconjunto de `name`, `institution` (`null` la borra), `opening_balance` y, en tarjetas, `credit_limit`, `statement_day` y `payment_due_day`. `type` u otros campos → `422`.
+- **200** `Account`.
+- **Errores:** `404`, `409 account_name_taken`, `409 account_has_movements` (si cambia `opening_balance`) y `422`.
+
+#### POST `/api/v1/accounts/{id}/archive` y `/restore`
+
+- **Request:** `{}`. **200** `Account`. Idempotentes. **Errores:** `404`.
+
+#### DELETE `/api/v1/accounts/{id}`
+
+- **204**. Definitivo.
+- **Errores:** `404` y `409 account_has_movements`.

@@ -1,6 +1,6 @@
 # ADR-0004: Row-Level Security con un rol de aplicación sin privilegios
 
-- **Estado:** Propuesta
+- **Estado:** Aceptada (30/10/2026)
 - **Fecha:** 30/10/2026
 - **Specs relacionadas:** `specs/database.md` (DP-DB-06), `specs/security.md`, `specs/features/accounts/spec.md` (RNF-ACC-01), `specs/features/accounts/plan.md` §5 y §8, [ADR-0001](ADR-0001-stack-tecnologico.md)
 

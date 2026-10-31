@@ -3,16 +3,156 @@
 | Campo | Valor |
 |---|---|
 | Identificador | `FEAT-ACC` |
-| Estado | `Draft` |
-| Última actualización | 29/10/2026 |
-| Plantilla | [`specs/templates/tasks-template.md`](../../templates/tasks-template.md) |
-| Especificación | [`spec.md`](spec.md) |
-| Plan técnico | [`plan.md`](plan.md) |
+| Estado | `Aprobado` |
+| Especificación | [`spec.md`](spec.md) (Aprobado, 30/10/2026) |
+| Plan técnico | [`plan.md`](plan.md) (Aprobado, 30/10/2026) |
+| Última actualización | 30/10/2026 |
 
-> ⚠️ **Los requisitos detallados y las decisiones técnicas están pendientes.** Este documento solo inicializa la feature y no contiene requisitos aprobados.
+> Reglas:
+> - Solo se listan tareas derivadas de un plan **aprobado**.
+> - Una tarea se marca `[x]` **solo** después de ejecutar su verificación con resultado exitoso.
+> - Aplicación: `finora-web` | `finora-back` | `shared` | `infraestructura`.
+> - Prioridad: `Alta` | `Media` | `Baja`.
+> - Los comandos de `finora-back` se ejecutan en esa carpeta y requieren Docker. Los de `finora-web`, en la suya.
 
-**No hay tareas aprobadas.** Las tareas se definirán a partir del [`plan.md`](plan.md) aprobado, usando la estructura de la plantilla (Frontend, Backend, Base de datos, Integración y Pruebas).
+Leyenda de estado:
 
-## Tareas
+- [ ] Pendiente
+- [x] Completada
 
-_Sin tareas definidas._
+Orden sugerido: INT-01 → DB-01 → DB-02 → BE-01 a BE-03 → FE-01 a FE-05 → QA-01 a QA-04 → INT-02.
+
+---
+
+## Integración
+
+- [x] **T-ACC-INT-01**: Registrar los 7 endpoints de `plan.md` §6 en `specs/api-contracts.md` (§3 y §5, estado `Aprobado`, sin implementar) y la tabla de `plan.md` §5 en `specs/database.md` §5.2.
+  - **Aplicación:** `shared`
+  - **Dependencias:** Plan aprobado
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** Endpoints, modelo `Account`, códigos de error y tabla coinciden con `plan.md` §5 y §6
+  - **Verificación:** Revisión manual de documentos
+
+## Base de datos
+
+- [ ] **T-ACC-DB-01**: RLS según ADR-0004. Migración que crea el rol `finora_app` si no existe, con permisos sobre todas las tablas y secuencias y privilegios por defecto para las futuras. `db/rls.py`: `SET ROLE finora_app` al conectar el motor de la API (no el de Alembic), evento `after_begin` que fija `finora.user_id` desde `Session.info` y dependencia `UserDb`. Las pruebas usan el mismo motor con `SET ROLE`.
+  - **Aplicación:** `finora-back`
+  - **Dependencias:** T-ACC-INT-01
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** La API trabaja como `finora_app` (no superusuario); `finora.user_id` se fija en cada transacción, también después de un `commit`, y no pasa a otra petición; toda la suite de `authentication` sigue en verde
+  - **Verificación:** `uv run pytest tests/integration/test_rls.py && uv run pytest && uv run mypy .`
+
+- [ ] **T-ACC-DB-02**: Migración `0003_accounts`: tabla `accounts` con sus `CHECK`, índice único en (`user_id`, `lower(name)`), índice en `user_id`, `ENABLE ROW LEVEL SECURITY` y política `accounts_owner`. Modelo `Account` registrado en `db/models.py`.
+  - **Aplicación:** `finora-back`
+  - **Dependencias:** T-ACC-DB-01
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** `upgrade` y `downgrade` limpios; sin `finora.user_id` no se ve ni se inserta ninguna fila; un usuario no ve filas de otro aunque la consulta no filtre; borrar un usuario borra sus cuentas (RN-ACC-11); el modelo coincide con la migración (`alembic check`)
+  - **Verificación:** `uv run pytest tests/integration/test_migrations.py tests/integration/test_accounts_rls.py && uv run alembic check`
+
+## Backend (`finora-back`)
+
+- [ ] **T-ACC-BE-01**: `accounts/balances.py`: saldo actual, totales (saldo disponible, patrimonio neto, deuda en tarjetas; solo cuentas activas) y estado de la tarjeta (cupo disponible, % de uso con `ROUND_HALF_EVEN`, cupo superado, saldo a favor), todo con `Decimal`.
+  - **Aplicación:** `finora-back`
+  - **Dependencias:** —
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** RN-ACC-02 a 05 y 09; CA-ACC-01, 02, 03 y 07 a nivel de cálculo; casos borde de §11 (deuda negativa, deuda sobre el cupo, saldos negativos, sin cuentas)
+  - **Verificación:** `uv run pytest tests/unit/test_account_balances.py`
+
+- [ ] **T-ACC-BE-02**: `accounts/schemas.py` y `accounts/service.py`: crear, listar, consultar, editar, archivar, reactivar y eliminar, siempre con el `user_id` de la sesión; nombre único sin distinguir mayúsculas; tope de 100 cuentas; campos de tarjeta solo en `credit_card`; `movement_count` (hoy 0) para RF-ACC-06 y 09. La validación de texto sin caracteres de control se mueve a `finora/validation.py` y la reutiliza `authentication`.
+  - **Aplicación:** `finora-back`
+  - **Dependencias:** T-ACC-DB-02, T-ACC-BE-01
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** RF-ACC-01 y 05 a 09; RN-ACC-08 a 10; VAL-ACC-01 a 08; montos solo como cadena con hasta 2 decimales (SUP-ACC-02)
+  - **Verificación:** `uv run pytest tests/unit/test_account_schemas.py tests/integration/test_accounts_service.py`
+
+- [ ] **T-ACC-BE-03**: `api/v1/accounts.py`: los 7 endpoints del contrato §5 con `CurrentUser` + `UserDb`, CSRF en escrituras, `404 account_not_found` idéntico para cuentas ajenas e inexistentes y errores RFC 9457 con los `code` del contrato.
+  - **Aplicación:** `finora-back`
+  - **Dependencias:** T-ACC-BE-02
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** CA-ACC-01 a 08 vía HTTP; respuestas idénticas a `api-contracts.md` §5; sin sesión `401`, sin CSRF `403`
+  - **Verificación:** `uv run pytest tests/integration/test_accounts_api.py && uv run ruff check . && uv run mypy .`
+
+## Frontend (`finora-web`)
+
+- [ ] **T-ACC-FE-01**: Base compartida: `pnpm api:types`; `parseMoneyInput` en `lib/format/money.ts` (texto es-CO → cadena decimal sin `number`); componentes `MoneyField` y `ConfirmDialog`; íconos SVG de los 6 tipos de cuenta y de la navegación.
+  - **Aplicación:** `finora-web`
+  - **Dependencias:** T-ACC-BE-03
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** `1.250.000`, `1250000,5` y `$ 1.250.000` se convierten exactamente; texto inválido o con más de 2 decimales da error; los componentes pasan axe
+  - **Verificación:** `pnpm test src/lib/format src/components && pnpm typecheck`
+
+- [ ] **T-ACC-FE-02**: `AppShell` (`src/app/shell/`): barra lateral de escritorio (252px, contraíble a 72px, preferencia en `localStorage`), barra lateral contraída en tablet, barra inferior en móvil, encabezado con menú de perfil ("Mi perfil", "Cerrar sesión"), "Saltar al contenido", `aria-current`. Solo "Inicio" y "Cuentas" en la navegación. `/`, `/cuentas` y `/perfil` dentro de `AppShell`.
+  - **Aplicación:** `finora-web`
+  - **Dependencias:** T-ACC-FE-01
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** Rangos de `claude-design.md` §3; navegación por teclado; axe sin violaciones; las pruebas de `authentication` siguen en verde
+  - **Verificación:** `pnpm test src/app && pnpm test && pnpm lint && pnpm typecheck`
+
+- [ ] **T-ACC-FE-03**: Página `/cuentas` (`lazy`): resumen de totales con su nombre y explicación, grupos "Cuentas y efectivo" y "Ahorro e inversión", tarjetas con deuda, cupo, cupo disponible, `progressbar` de uso, corte y pago y aviso de cupo superado; sección de archivadas plegada; estados de carga, error con reintento y vacío.
+  - **Aplicación:** `finora-web`
+  - **Dependencias:** T-ACC-FE-02
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** RF-ACC-02 a 04, 08 y 10; RN-ACC-06; CA-ACC-02 en pantalla; el frontend no suma montos
+  - **Verificación:** `pnpm test src/features/accounts`
+
+- [ ] **T-ACC-FE-04**: `AccountFormDialog` para alta y edición: tipo con botones de opción (fijo en la edición), campos de tarjeta solo con `credit_card`, saldo inicial deshabilitado si hay movimientos, zod como ayuda y errores `422`/`409` del backend en su campo.
+  - **Aplicación:** `finora-web`
+  - **Dependencias:** T-ACC-FE-03
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** RF-ACC-01, 05 y 06; CA-ACC-08; VAL-ACC-01 a 04 y 07 con sus mensajes
+  - **Verificación:** `pnpm test src/features/accounts`
+
+- [ ] **T-ACC-FE-05**: Archivar (con aviso si el saldo ≠ 0), reactivar y eliminar con `ConfirmDialog`; ante `409 account_has_movements` se ofrece archivar; `404` cierra el diálogo y recarga.
+  - **Aplicación:** `finora-web`
+  - **Dependencias:** T-ACC-FE-04
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** RF-ACC-07 a 09; CA-ACC-04 y 05; VAL-ACC-08 y 09
+  - **Verificación:** `pnpm test src/features/accounts && pnpm lint && pnpm typecheck && pnpm build`
+
+## Pruebas
+
+- [ ] **T-ACC-QA-01**: E2E (Playwright): crear las 4 cuentas de CA-ACC-01 y comprobar totales y datos de la tarjeta; archivar y reactivar; eliminar; un segundo usuario no ve las cuentas del primero.
+  - **Aplicación:** `finora-web`
+  - **Dependencias:** T-ACC-FE-05
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** CA-ACC-01, 02, 04, 05 y 06 en el navegador real
+  - **Verificación:** `pnpm test:e2e`
+
+- [ ] **T-ACC-QA-02**: Accesibilidad: axe WCAG 2.2 AA (con contraste) en `AppShell` y Cuentas en los tres rangos, reflow a 320px, foco visible y navegación por teclado del menú y los diálogos.
+  - **Aplicación:** `finora-web`
+  - **Dependencias:** T-ACC-QA-01
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** RNF-ACC-04
+  - **Verificación:** `pnpm test:e2e e2e/accessibility.spec.ts`
+
+- [ ] **T-ACC-QA-03**: Revisión de seguridad de la feature (aislamiento, RLS, validación de montos) y corrección de los hallazgos confirmados.
+  - **Aplicación:** `finora-web` / `finora-back`
+  - **Dependencias:** T-ACC-QA-02
+  - **Prioridad:** Alta
+  - **Criterios de aceptación:** Sin hallazgos confirmados abiertos de severidad alta o media
+  - **Verificación:** Informe de la revisión y suites de ambas aplicaciones en verde
+
+- [ ] **T-ACC-QA-04**: Revisión visual de `AppShell` y Cuentas contra Claude Design con la responsable de producto, en escritorio, tablet y móvil.
+  - **Aplicación:** `finora-web`
+  - **Dependencias:** T-ACC-QA-02
+  - **Prioridad:** Media
+  - **Criterios de aceptación:** Aprobación de producto; diferencias registradas y corregidas o aceptadas
+  - **Verificación:** Revisión manual con capturas
+
+## Cierre
+
+- [ ] **T-ACC-INT-02**: Endpoints a `Implementado` en `api-contracts.md`, esquema implementado en `database.md`, README de ambas aplicaciones (rol `finora_app`, RLS) y estado de la feature.
+  - **Aplicación:** `shared`
+  - **Dependencias:** T-ACC-QA-03, T-ACC-QA-04
+  - **Prioridad:** Media
+  - **Criterios de aceptación:** Los comandos documentados funcionan tal como están escritos
+  - **Verificación:** Revisión manual de documentos y suites completas de ambas aplicaciones
+
+---
+
+## Historial de cambios
+
+| Fecha | Cambio | Autor |
+|---|---|---|
+| 29/10/2026 | Creación (inicialización de la feature) | Claude Code |
+| 30/10/2026 | Tareas a partir del plan aprobado. Completada INT-01: 7 endpoints y modelo `Account` en `api-contracts.md` (§3 y §5) y tabla `accounts` con RLS en `database.md` §5.2. | Claude Code |
