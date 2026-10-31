@@ -42,12 +42,12 @@ Orden sugerido: INT-01 → DB-01 → DB-02 → BE-01 a BE-03 → FE-01 a FE-05 �
   - **Criterios de aceptación:** La API trabaja como `finora_app` (no superusuario); `finora.user_id` se fija en cada transacción, también después de un `commit`, y no pasa a otra petición; toda la suite de `authentication` sigue en verde
   - **Verificación:** `uv run pytest tests/integration/test_rls.py && uv run pytest && uv run mypy .`
 
-- [ ] **T-ACC-DB-02**: Migración `0004_accounts`: tabla `accounts` con sus `CHECK`, índice único en (`user_id`, `lower(name)`), índice en `user_id`, `ENABLE ROW LEVEL SECURITY` y política `accounts_owner`. Modelo `Account` registrado en `db/models.py`.
+- [x] **T-ACC-DB-02**: Migración `0004_accounts`: tabla `accounts` con sus `CHECK`, índice único en (`user_id`, `lower(name)`) (sirve también para buscar por usuario), `ENABLE ROW LEVEL SECURITY` y política `accounts_owner`. Modelo `Account` registrado en `db/models.py`.
   - **Aplicación:** `finora-back`
   - **Dependencias:** T-ACC-DB-01
   - **Prioridad:** Alta
   - **Criterios de aceptación:** `upgrade` y `downgrade` limpios; sin `finora.user_id` no se ve ni se inserta ninguna fila; un usuario no ve filas de otro aunque la consulta no filtre; borrar un usuario borra sus cuentas (RN-ACC-11); el modelo coincide con la migración (`alembic check`)
-  - **Verificación:** `uv run pytest tests/integration/test_migrations.py tests/integration/test_accounts_rls.py && uv run alembic check`
+  - **Verificación:** `uv run pytest tests/integration/test_accounts_schema.py tests/integration/test_accounts_rls.py && uv run alembic check`
 
 ## Backend (`finora-back`)
 
@@ -157,3 +157,4 @@ Orden sugerido: INT-01 → DB-01 → DB-02 → BE-01 a BE-03 → FE-01 a FE-05 �
 | 29/10/2026 | Creación (inicialización de la feature) | Claude Code |
 | 30/10/2026 | Tareas a partir del plan aprobado. Completada INT-01: 7 endpoints y modelo `Account` en `api-contracts.md` (§3 y §5) y tabla `accounts` con RLS en `database.md` §5.2. | Claude Code |
 | 30/10/2026 | Completada DB-01: migración `0003_app_role`, `db/rls.py` (`SET ROLE` al conectar, `after_begin` con `set_config(..., true)`, `bind_user`/`unbind_user`) y dependencia `UserDb`; la API y las pruebas trabajan como `finora_app`. `tests/integration/test_rls.py` (7): rol sin privilegios y no dueño, sin acceso a `alembic_version`, usuario conservado tras `commit` y no heredado por otra sesión del pool, `UserDb`, política que falla cerrado y migración que baja y sube. Verificado: backend 402/402 (ruff, mypy), E2E 17/17 contra el backend con el rol nuevo y migración aplicada a la base de desarrollo. | Claude Code |
+| 30/10/2026 | Completada DB-02: modelo `Account` (`finora/accounts/models.py`) y migración `0004_accounts` con `CHECK`, índice único (`user_id`, `lower(name)`), RLS y política `accounts_owner`. Pruebas: `test_accounts_schema.py` (permisos de `finora_app`, RLS activa, dueño distinto, migración que baja y sube, restricciones de tipo, nombre, entidad, unicidad, datos de tarjeta, 4 decimales, saldos cero y negativos) y `test_accounts_rls.py` (cada usuario ve solo lo suyo sin `WHERE`, sin usuario no ve nada, no crea ni traspasa cuentas a otro, `UPDATE`/`DELETE` sin filtro no tocan cuentas ajenas, la cascada al borrar el usuario funciona sin usuario fijado). Verificado: backend 433/433, `alembic check` sin diferencias, migración aplicada a la base de desarrollo. | Claude Code |

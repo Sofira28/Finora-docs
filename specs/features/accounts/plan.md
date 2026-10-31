@@ -147,8 +147,7 @@ Migraciones **`0003_app_role`** (rol, T-ACC-DB-01) y **`0004_accounts`** (tabla,
 
 - **Restricciones e índices**:
   - `CHECK`: los tres campos de tarjeta van todos llenos si `type = 'credit_card'` y todos vacíos si no;
-  - índice único en (`user_id`, `lower(name)`) (VAL-ACC-02);
-  - índice en `user_id`.
+  - índice único en (`user_id`, `lower(name)`) (VAL-ACC-02), que también sirve para buscar por `user_id`.
 - **RLS**:
   - `ALTER TABLE accounts ENABLE ROW LEVEL SECURITY`;
   - política `accounts_owner` `USING`/`WITH CHECK` (`user_id = nullif(current_setting('finora.user_id', true), '')::uuid`).
@@ -278,3 +277,4 @@ Todos exigen sesión `active`. `POST`, `PATCH` y `DELETE` exigen además CSRF y 
 | 30/10/2026 | Plan completo a partir de la spec aprobada; propone ADR-0004 (RLS). Pasa a `En revisión`. | Claude Code |
 | 30/10/2026 | Aprobado por la usuaria, con las cuatro decisiones de §14 (ADR-0004 pasa a `Aceptada`). | Claude Code |
 | 30/10/2026 | Precisiones de DB-01: el rol va en su propia migración `0003_app_role` (la tabla pasa a `0004_accounts`). `SET ROLE` se ejecuta y confirma al abrir cada conexión, para que un `ROLLBACK` posterior no lo deshaga. El rol no se borra en el downgrade (es global del servidor y lo comparten las bases de desarrollo, E2E y pruebas): solo pierde los permisos de esa base. `alembic_version` queda solo para el dueño. `UserDb` (en `auth/dependencies.py`) fija el usuario y lo libera al terminar la petición. | Claude Code |
+| 30/10/2026 | Precisión de DB-02: no se crea un índice aparte en `user_id`; el índice único (`user_id`, `lower(name)`) empieza por esa columna y lo cubre. Comprobado que el borrado en cascada desde `users` funciona aunque la petición no tenga usuario fijado (PostgreSQL aplica las acciones de clave foránea sin RLS). | Claude Code |

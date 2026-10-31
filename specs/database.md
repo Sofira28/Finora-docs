@@ -75,10 +75,10 @@ Aprobado el 29/10/2026 en [`features/authentication/plan.md`](features/authentic
 
 ### 5.2 Cuentas y tarjetas (`accounts`)
 
-Aprobado el 30/10/2026 en [`features/accounts/plan.md`](features/accounts/plan.md) §5. Rol `finora_app` en la migración `0003_app_role` (implementada, 30/10/2026); tabla en `0004_accounts`, **sin implementar**.
+Aprobado el 30/10/2026 en [`features/accounts/plan.md`](features/accounts/plan.md) §5. Rol `finora_app` en la migración `0003_app_role` (implementada, 30/10/2026); tabla en `0004_accounts` (implementada, 30/10/2026).
 
 | Tabla | Columnas principales | Restricciones / índices |
 |---|---|---|
-| `accounts` | `id` (UUIDv7), `user_id` (FK `users`, `ON DELETE CASCADE`), `name`, `type`, `institution` (nullable), `opening_balance` (`numeric(19,4)`), `credit_limit` (`numeric(19,4)`, nullable), `statement_day` y `payment_due_day` (`smallint`, nullable), `archived_at` (nullable), `created_at`, `updated_at` | `type` en `bank`, `wallet`, `cash`, `savings`, `investment`, `credit_card`; campos de tarjeta todos llenos si es `credit_card` y todos vacíos si no; `credit_limit > 0`; días de 1 a 31; `name` de 1 a 60 caracteres sin espacios en los extremos; único en (`user_id`, `lower(name)`); índice en `user_id` |
+| `accounts` | `id` (UUIDv7), `user_id` (FK `users`, `ON DELETE CASCADE`), `name`, `type`, `institution` (nullable), `opening_balance` (`numeric(19,4)`), `credit_limit` (`numeric(19,4)`, nullable), `statement_day` y `payment_due_day` (`smallint`, nullable), `archived_at` (nullable), `created_at`, `updated_at` | `type` en `bank`, `wallet`, `cash`, `savings`, `investment`, `credit_card`; campos de tarjeta todos llenos si es `credit_card` y todos vacíos si no; `credit_limit > 0`; días de 1 a 31; `name` de 1 a 60 caracteres sin espacios en los extremos; único en (`user_id`, `lower(name)`), que también sirve para buscar por `user_id` |
 
 **RLS (DP-DB-06, [ADR-0004](../docs/decisions/ADR-0004-row-level-security.md)):** `accounts` es la primera tabla con RLS. Política `accounts_owner` (`USING` y `WITH CHECK`): `user_id = nullif(current_setting('finora.user_id', true), '')::uuid`. La API trabaja con el rol `finora_app` (sin `SUPERUSER` ni `BYPASSRLS`, no dueño de las tablas), que la migración crea si no existe; `finora.user_id` se fija al comenzar cada transacción de una petición autenticada.
